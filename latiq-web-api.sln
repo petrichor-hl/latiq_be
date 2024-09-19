@@ -5,6 +5,10 @@ VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LaTiQ.WebAPI", "LaTiQ.WebAPI\LaTiQ.WebAPI.csproj", "{320CDE90-2EBE-4199-9075-5BD8DD5E47CE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LaTiQ.Infrastructure", "LaTiQ.Infrastructure\LaTiQ.Infrastructure.csproj", "{F4FB85C8-8207-4570-A623-6C67BE2590DA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LaTiQ.Core", "LaTiQ.Core\LaTiQ.Core.csproj", "{A8143868-7A15-4A7F-95D6-B6CDD4E163C7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{320CDE90-2EBE-4199-9075-5BD8DD5E47CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{320CDE90-2EBE-4199-9075-5BD8DD5E47CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{320CDE90-2EBE-4199-9075-5BD8DD5E47CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4FB85C8-8207-4570-A623-6C67BE2590DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4FB85C8-8207-4570-A623-6C67BE2590DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4FB85C8-8207-4570-A623-6C67BE2590DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4FB85C8-8207-4570-A623-6C67BE2590DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8143868-7A15-4A7F-95D6-B6CDD4E163C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8143868-7A15-4A7F-95D6-B6CDD4E163C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8143868-7A15-4A7F-95D6-B6CDD4E163C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8143868-7A15-4A7F-95D6-B6CDD4E163C7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
