@@ -33,6 +33,7 @@ namespace LaTiQ.Core.Services
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // JWT unique ID
                 new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()), // Issued at (date and time of token generation)
                 new Claim(ClaimTypes.Email, user.Email),
+                new Claim("tokenVersion", user.TokenVersion.ToString()),
             };
 
             // Create a SymmetricSecurityKey object using the key specified in the configuration.

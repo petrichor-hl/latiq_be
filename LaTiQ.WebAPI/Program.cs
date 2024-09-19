@@ -75,9 +75,9 @@ builder.Services.AddAuthentication(options => {
      };
      options.Events = new JwtBearerEvents
      {
-         OnTokenValidated = context =>
+         OnTokenValidated = async context =>
          {
-             Console.WriteLine("OnTokenValidated");
+             // Console.WriteLine("OnTokenValidated");
              // Có thể dùng cách này:
              // IEnumerable<Claim>? claims = context.Principal?.Claims;
              // Claim? emailClaim = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email);
@@ -88,7 +88,15 @@ builder.Services.AddAuthentication(options => {
                  context.Fail("Token does not contain an Email claim.");
              }
 
-             return Task.CompletedTask;
+             var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+
+             ApplicationUser? user = await userManager.FindByEmailAsync(emailClaim);
+             string? tokenVersionClaim = context.Principal.FindFirstValue("tokenVersion");
+
+             if (user == null || !int.TryParse(tokenVersionClaim, out int intTokenVersion) || intTokenVersion != user.TokenVersion)
+             {
+                 context.Fail("Invalid Access Token.");
+             }
          },
          OnChallenge = context =>
          {

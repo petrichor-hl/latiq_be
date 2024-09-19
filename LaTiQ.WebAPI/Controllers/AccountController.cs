@@ -162,27 +162,15 @@ namespace LaTiQ.WebAPI.Controllers
             });
         }
 
-        [Authorize]
         [HttpGet("logout")]
         public async Task<IActionResult> Logout()
         {
             // Chưa rõ tác dụng của:
             // await _signInManager.SignOutAsync();
 
-            string accessToken = GetAccessToken();
-            ClaimsPrincipal? principal;
-            try
-            {
-                principal = _jwtService.GetPrincipalFromJwtToken(accessToken);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Exception: " + ex.GetType().FullName);
-                Console.WriteLine("Message: " + ex.Message);
-                return BadRequest("Invalid jwt access token");
-            }
-
+            ClaimsPrincipal principal = User;
             string email = principal.FindFirstValue(ClaimTypes.Email);
+
             ApplicationUser? user = await _userManager.FindByEmailAsync(email);
             if (user == null)
             {
@@ -192,6 +180,7 @@ namespace LaTiQ.WebAPI.Controllers
             {
                 user.RefreshToken = null;
                 user.RefreshTokenExpirationDateTime = null;
+                user.TokenVersion++;
                 await _userManager.UpdateAsync(user);
                 return Ok("The user has been logged out");
             }
