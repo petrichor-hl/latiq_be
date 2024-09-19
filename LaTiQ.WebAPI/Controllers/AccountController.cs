@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace LaTiQ.WebAPI.Controllers
 {
@@ -56,20 +57,15 @@ namespace LaTiQ.WebAPI.Controllers
 
             if (result.Succeeded)
             {
-                // sign-in
-                // await _signInManager.SignInAsync(user, isPersistent: false);
+                //JwtToken jwtToken = _jwtService.CreateJwtToken(user);
+                //user.RefreshToken = jwtToken.RefreshToken;
+                //user.RefreshTokenExpirationDateTime = jwtToken.RefreshTokenExpirationDateTime;
+                //await _userManager.UpdateAsync(user);
 
-                JwtToken jwtToken = _jwtService.CreateJwtToken(user);
-                user.RefreshToken = jwtToken.RefreshToken;
-                user.RefreshTokenExpirationDateTime = jwtToken.RefreshTokenExpirationDateTime;
-                await _userManager.UpdateAsync(user);
+                string verifyEmailToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                Console.WriteLine("verifyEmailToken = " + verifyEmailToken);
 
-                return Ok(new AuthenticationResponse
-                {
-                    Email = registerDTO.Email,
-                    AccessToken = jwtToken.AccessToken,
-                    RefreshToken = jwtToken.RefreshToken,
-                });
+                return Ok("Account created! Please confirm your email in the inbox.");
             }
             else
             {
@@ -90,7 +86,7 @@ namespace LaTiQ.WebAPI.Controllers
             }
 
 
-            var result = await _signInManager.PasswordSignInAsync(loginDTO.Email, loginDTO.Password, isPersistent: false, lockoutOnFailure: false);
+            SignInResult result = await _signInManager.PasswordSignInAsync(loginDTO.Email, loginDTO.Password, isPersistent: false, lockoutOnFailure: false);
 
             if (result.Succeeded)
             {
@@ -111,6 +107,32 @@ namespace LaTiQ.WebAPI.Controllers
             else
             {
                 return BadRequest("Invalid email or password");
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("confirm-email")]
+        public async Task<ActionResult<string>> ConfirmEmail(ConfirmEmailDTO confirmEmailDTO)
+        {
+            if (string.IsNullOrEmpty(confirmEmailDTO.Email) || string.IsNullOrEmpty(confirmEmailDTO.VerifyEmailToken))
+            {
+                return BadRequest("Invalid Request");
+            }
+
+            ApplicationUser? user = await _userManager.FindByEmailAsync(confirmEmailDTO.Email);
+            if (user == null)
+            {
+                return BadRequest("User Not Found");
+            }
+
+            var result = await _userManager.ConfirmEmailAsync(user, confirmEmailDTO.VerifyEmailToken);
+            if (result.Succeeded)
+            {
+                return Ok("Email confirmation successful.");
+            }
+            else
+            {
+                return BadRequest("Email confirmation failed.");
             }
         }
 
@@ -185,11 +207,6 @@ namespace LaTiQ.WebAPI.Controllers
                 return Ok("The user has been logged out");
             }
 
-        }
-
-        private string GetAccessToken()
-        {
-            return Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
         }
 
         private bool IsEmailAlreadyRegistered(string email)
