@@ -23,11 +23,24 @@ builder.Services.AddControllers(options =>
 })
  .AddXmlSerializerFormatters();
 
-builder.Services.AddTransient<IJwtService, JwtService>();
+builder.Services.AddTransient<IJwtService, JwtService>()
+    .AddTransient<IEmailSender, EmailSender>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// CORS:
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policyBuilder =>
+    {
+        policyBuilder.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+
+});
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -120,6 +133,12 @@ builder.Services.AddAuthentication(options => {
      };
  });
 
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+    // The email confirmation token will expire after 3 hours
+    options.TokenLifespan = TimeSpan.FromHours(3);
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -130,6 +149,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();

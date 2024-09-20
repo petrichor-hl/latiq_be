@@ -3,11 +3,14 @@ using LaTiQ.Core.DTO.Response;
 using LaTiQ.Core.Entities;
 using LaTiQ.Core.Identity;
 using LaTiQ.Core.ServiceContracts;
+using LaTiQ.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using System.Web;
 using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace LaTiQ.WebAPI.Controllers
@@ -18,17 +21,27 @@ namespace LaTiQ.WebAPI.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
-
         private readonly SignInManager<ApplicationUser> _signInManager;
+
         private readonly IJwtService _jwtService;
+        private readonly IEmailSender _emailSender;
 
+        private readonly IConfiguration _configuration;
 
-        public AccountController(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, SignInManager<ApplicationUser> signInManager, IJwtService jwtService)
+        public AccountController(
+            UserManager<ApplicationUser> userManager, 
+            RoleManager<ApplicationRole> roleManager, 
+            SignInManager<ApplicationUser> signInManager, 
+            IJwtService jwtService, IEmailSender emailSender, 
+            IConfiguration configuration
+            )
         {
             _userManager = userManager;
-            _roleManager = roleManager;
+             _roleManager = roleManager;
             _signInManager = signInManager;
             _jwtService = jwtService;
+            _emailSender = emailSender;
+            _configuration = configuration;
         }
 
         [AllowAnonymous]
@@ -57,13 +70,13 @@ namespace LaTiQ.WebAPI.Controllers
 
             if (result.Succeeded)
             {
-                //JwtToken jwtToken = _jwtService.CreateJwtToken(user);
-                //user.RefreshToken = jwtToken.RefreshToken;
-                //user.RefreshTokenExpirationDateTime = jwtToken.RefreshTokenExpirationDateTime;
-                //await _userManager.UpdateAsync(user);
-
                 string verifyEmailToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                string verifyEmailTokenEncoded = HttpUtility.UrlEncode(verifyEmailToken);
                 Console.WriteLine("verifyEmailToken = " + verifyEmailToken);
+
+                string confirmLink = $"{_configuration["LatiqUrlWeb"]}/#/confirm-email?email={registerDTO.Email}&verifyEmailToken={verifyEmailTokenEncoded}";
+
+                await _emailSender.SendMailAsync(registerDTO.Email, "[LaTiQ] Please confirm your email address", EmailTemplate.ConfirmEmail(registerDTO.NickName, redirectTo: confirmLink));
 
                 return Ok("Account created! Please confirm your email in the inbox.");
             }
@@ -125,6 +138,7 @@ namespace LaTiQ.WebAPI.Controllers
                 return BadRequest("User Not Found");
             }
 
+            Console.WriteLine("verifyEmailToken = " + confirmEmailDTO.VerifyEmailToken);
             var result = await _userManager.ConfirmEmailAsync(user, confirmEmailDTO.VerifyEmailToken);
             if (result.Succeeded)
             {
