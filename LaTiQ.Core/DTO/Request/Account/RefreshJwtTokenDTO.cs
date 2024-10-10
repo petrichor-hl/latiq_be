@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LaTiQ.Core.DTO.Request
+namespace LaTiQ.Core.DTO.Request.Account
 {
     public class RefreshJwtTokenDTO
     {

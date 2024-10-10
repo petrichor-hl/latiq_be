@@ -21,9 +21,22 @@ namespace LaTiQ.WebAPI.Controllers
         [HttpGet("authenticated")]
         public ActionResult<string> TestAuthenticated()
         {
-            ClaimsPrincipal abcxyz = HttpContext.User;
-            Console.WriteLine("abcxyz.FindFirstValue(ClaimTypes.Email = " + abcxyz.FindFirstValue(ClaimTypes.Email));
             return Ok("Congratulation! The user has been authenticated.");
+        }
+
+        [AllowAnonymous]
+        [HttpGet("timeout")]
+        public async Task<ActionResult<string>> TestTimeout()
+        {
+            await Task.Delay(100000);
+            return Ok("100 seconds have passed :)");
+        }
+
+        [AllowAnonymous]
+        [HttpGet("server-error")]
+        public ActionResult<string> TestServerError()
+        {
+            return StatusCode(500, "An error occurred.");
         }
     }
 }

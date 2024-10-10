@@ -1,4 +1,4 @@
-﻿using LaTiQ.Core.DTO.Request;
+﻿using LaTiQ.Core.DTO.Request.Account;
 using LaTiQ.Core.DTO.Response;
 using LaTiQ.Core.Entities;
 using LaTiQ.Core.Identity;
@@ -64,6 +64,7 @@ namespace LaTiQ.WebAPI.Controllers
                 Email = registerDTO.Email,
                 UserName = registerDTO.Email,   // UserName is used for login
                 NickName = registerDTO.NickName,
+                Avatar = registerDTO.Avatar,
             };
 
             IdentityResult result = await _userManager.CreateAsync(user, registerDTO.Password);
@@ -119,7 +120,7 @@ namespace LaTiQ.WebAPI.Controllers
             }
             else
             {
-                return BadRequest("Invalid email or password");
+                return BadRequest("Email hoặc Mật khẩu không hợp lệ.");
             }
         }
 
