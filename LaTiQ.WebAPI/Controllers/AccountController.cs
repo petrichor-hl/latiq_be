@@ -46,7 +46,7 @@ namespace LaTiQ.WebAPI.Controllers
 
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<ActionResult<AuthenticationResponse>> Register(RegisterDTO registerDTO)
+        public async Task<IActionResult> Register(RegisterDTO registerDTO)
         {
             if (ModelState.IsValid == false)
             {
@@ -90,7 +90,7 @@ namespace LaTiQ.WebAPI.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<ActionResult<AuthenticationResponse>> Login(LoginDTO loginDTO)
+        public async Task<IActionResult> Login(LoginDTO loginDTO)
         {
             //Validation
             if (ModelState.IsValid == false)
@@ -126,7 +126,7 @@ namespace LaTiQ.WebAPI.Controllers
 
         [AllowAnonymous]
         [HttpPost("confirm-email")]
-        public async Task<ActionResult<string>> ConfirmEmail(ConfirmEmailDTO confirmEmailDTO)
+        public async Task<IActionResult> ConfirmEmail(ConfirmEmailDTO confirmEmailDTO)
         {
             if (string.IsNullOrEmpty(confirmEmailDTO.Email) || string.IsNullOrEmpty(confirmEmailDTO.VerifyEmailToken))
             {

@@ -2,6 +2,7 @@
 using LaTiQ.Core.ServiceContracts;
 using LaTiQ.Core.Services;
 using LaTiQ.Infrastructure.DatabaseContext;
+using LaTiQ.WebAPI.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -46,7 +47,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default"));
 });
-
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {
     options.SignIn.RequireConfirmedEmail = true;
@@ -85,7 +85,7 @@ builder.Services.AddAuthentication(options => {
          ValidIssuer = builder.Configuration["Jwt:Issuer"],
          ValidateLifetime = true,
          ValidateIssuerSigningKey = true,
-         IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+         IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
      };
      options.Events = new JwtBearerEvents
      {
@@ -99,7 +99,7 @@ builder.Services.AddAuthentication(options => {
              string? emailClaim = context.Principal.FindFirstValue(ClaimTypes.Email);
              if (emailClaim == null)
              {
-                 context.Fail("Token does not contain an Email claim.");
+                 context.Fail("Token không chứa thuộc tính Email.");
              }
 
              var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
@@ -107,9 +107,14 @@ builder.Services.AddAuthentication(options => {
              ApplicationUser? user = await userManager.FindByEmailAsync(emailClaim);
              string? tokenVersionClaim = context.Principal.FindFirstValue("tokenVersion");
 
-             if (user == null || !int.TryParse(tokenVersionClaim, out int intTokenVersion) || intTokenVersion != user.TokenVersion)
+             if (user == null)
              {
-                 context.Fail("Invalid Access Token.");
+                 context.Fail("Không tìm thấy người dùng");
+
+             }
+             else if (!int.TryParse(tokenVersionClaim, out int intTokenVersion) || intTokenVersion != user.TokenVersion)
+             {
+                 context.Fail("Access Token không hợp lệ.");
              }
          },
          OnChallenge = context =>
@@ -123,7 +128,7 @@ builder.Services.AddAuthentication(options => {
                  var result = JsonSerializer.Serialize(new
                  {
                      error = "invalid_token",
-                     error_description = "User authentication failed"
+                     error_description = context.AuthenticateFailure?.Message ?? "User authentication failed"
                  });
 
                  return context.Response.WriteAsync(result);
@@ -132,6 +137,8 @@ builder.Services.AddAuthentication(options => {
          }
      };
  });
+
+builder.Services.AddSignalR();
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
@@ -156,5 +163,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<GlobalHub>("global-hub");
 
 app.Run();

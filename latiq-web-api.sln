@@ -9,8 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaTiQ.Infrastructure", "LaT
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaTiQ.Core", "LaTiQ.Core\LaTiQ.Core.csproj", "{A8143868-7A15-4A7F-95D6-B6CDD4E163C7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LaTiQ.SignalR", "LaTiQ.SignalR\LaTiQ.SignalR.csproj", "{DE262912-34FD-467D-A54A-1C838BADC5E2}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,10 +27,6 @@ Global
 		{A8143868-7A15-4A7F-95D6-B6CDD4E163C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A8143868-7A15-4A7F-95D6-B6CDD4E163C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A8143868-7A15-4A7F-95D6-B6CDD4E163C7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DE262912-34FD-467D-A54A-1C838BADC5E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DE262912-34FD-467D-A54A-1C838BADC5E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DE262912-34FD-467D-A54A-1C838BADC5E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DE262912-34FD-467D-A54A-1C838BADC5E2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
