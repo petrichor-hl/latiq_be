@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using LaTiQ.Core.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 
@@ -14,6 +15,24 @@ namespace LaTiQ.WebAPI.Hubs
             Console.WriteLine("email = " + email);
             Console.WriteLine("Context.UserIdentifier = " + Context.UserIdentifier);
         }
+
+        #region Drawing
+        public async Task BeginPath(string strokeColor, float lineWidth, Point point)
+        {
+            await Clients.Others.SendAsync("BeginPath", strokeColor, lineWidth, point);
+        }
+
+        public async Task LineTo(Point point)
+        {
+            await Clients.Others.SendAsync("LineTo", point);
+        }
+
+        public async Task Undo()
+        {
+            Console.WriteLine("Undo");
+            await Clients.Others.SendAsync("Undo");
+        }
+        #endregion
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {

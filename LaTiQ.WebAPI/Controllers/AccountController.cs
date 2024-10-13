@@ -77,7 +77,7 @@ namespace LaTiQ.WebAPI.Controllers
 
                 string confirmLink = $"{_configuration["LatiqUrlWeb"]}/#/confirm-email?email={registerDTO.Email}&verifyEmailToken={verifyEmailTokenEncoded}";
 
-                await _emailSender.SendMailAsync(registerDTO.Email, "[LaTiQ] Please confirm your email address", EmailTemplate.ConfirmEmail(registerDTO.NickName, redirectTo: confirmLink));
+                //await _emailSender.SendMailAsync(registerDTO.Email, "[LaTiQ] Please confirm your email address", EmailTemplate.ConfirmEmail(registerDTO.NickName, redirectTo: confirmLink));
 
                 return Ok("Account created! Please confirm your email in the inbox.");
             }
