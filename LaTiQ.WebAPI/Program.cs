@@ -3,6 +3,9 @@ using LaTiQ.Core.ServiceContracts;
 using LaTiQ.Core.Services;
 using LaTiQ.Infrastructure.DatabaseContext;
 using LaTiQ.WebAPI.Hubs;
+using LaTiQ.WebAPI.ServiceContracts;
+using LaTiQ.WebAPI.Services;
+using LaTiQ.WebAPI.Singletons;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -15,7 +18,7 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+
 builder.Services.AddControllers(options =>
 {
     //Authorization policy
@@ -24,8 +27,14 @@ builder.Services.AddControllers(options =>
 })
  .AddXmlSerializerFormatters();
 
+// Add services to the container.
 builder.Services.AddTransient<IJwtService, JwtService>()
-    .AddTransient<IEmailSender, EmailSender>();
+    .AddTransient<IEmailSender, EmailSender>()
+    .AddScoped<ITopicService, TopicService>()
+    .AddScoped<IUserService, UserService>()
+    .AddScoped<IRoomService, RoomService>()
+    .AddSingleton<RoomData>();
+
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

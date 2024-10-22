@@ -10,7 +10,5 @@ namespace LaTiQ.Infrastructure.DatabaseContext
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
     {
         public ApplicationDbContext(DbContextOptions options) : base(options) { }
-
-        public DbSet<Room>? Rooms { get; set; }
     }
 }

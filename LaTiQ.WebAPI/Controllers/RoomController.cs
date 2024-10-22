@@ -1,7 +1,12 @@
 ﻿using LaTiQ.Core.DTO.Request.Room;
+using LaTiQ.Core.DTO.Response.Room;
+using LaTiQ.Core.DTO.Response.Topic;
+using LaTiQ.Core.DTO.Response.User;
 using LaTiQ.Core.Entities.Room;
 using LaTiQ.Core.Identity;
 using LaTiQ.Infrastructure.DatabaseContext;
+using LaTiQ.WebAPI.ServiceContracts;
+using LaTiQ.WebAPI.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,14 +18,10 @@ namespace LaTiQ.WebAPI.Controllers
     [ApiController]
     public class RoomController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly HashSet<int> uniqueNumbers = new();
-
-        public RoomController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        private readonly IRoomService _roomService;
+        public RoomController(IRoomService roomService)
         {
-            _context = context;
-            _userManager = userManager;
+            _roomService = roomService;
         }
 
         [HttpPost("make-room")]
@@ -29,31 +30,36 @@ namespace LaTiQ.WebAPI.Controllers
             ClaimsPrincipal principal = User;
             string email = principal.FindFirstValue(ClaimTypes.Email);
 
-            ApplicationUser user = await _userManager.FindByEmailAsync(email);
+            RoomResponse? roomResponse = await _roomService.MakeRoom(email, req);
 
-            int currentCount = uniqueNumbers.Count;
-            int hashCode;
-            do
+            if (roomResponse == null)
             {
-                hashCode = Guid.NewGuid().GetHashCode();
-                if (hashCode < 0)
-                {
-                    hashCode *= -1;
-                }
-                uniqueNumbers.Add(hashCode);
-            } while (uniqueNumbers.Count == currentCount);
-
-            Room room = new()
+                return BadRequest("Tạo phòng không thành công.");
+            }
+            else
             {
-                RoomId = hashCode,
-                OwnerId = user.Id,
-                TopicId = req.TopicId,
-                Capacity = req.Capacity,
-                Round = req.Round,
-                IsPublic = req.IsPublic,
-            };
+                return Ok(roomResponse);
+            }
+        }
 
-            return Ok(room);
+        [HttpGet]
+        public async Task<IActionResult> GetRoom([FromQuery] string roomId)
+        {
+            if (string.IsNullOrEmpty(roomId))
+            {
+                return BadRequest("Room ID is required.");
+            }
+
+            RoomResponse? roomResponse = await _roomService.GetRoom(roomId);
+
+            if (roomResponse == null)
+            {
+                return BadRequest("Không tìm thấy phòng.");
+            }
+            else
+            {
+                return Ok(roomResponse);
+            }
         }
     }
 }
