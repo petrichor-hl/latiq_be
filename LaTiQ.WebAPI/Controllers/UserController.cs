@@ -2,8 +2,11 @@
 using LaTiQ.Core.DTO.Response.User;
 using LaTiQ.Core.Identity;
 using LaTiQ.Core.ServiceContracts;
+using LaTiQ.WebAPI.ServiceContracts;
+using LaTiQ.WebAPI.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace LaTiQ.WebAPI.Controllers
@@ -12,17 +15,11 @@ namespace LaTiQ.WebAPI.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IUserService _userService;
 
-        private readonly IJwtService _jwtService;
-
-        public UserController(
-            UserManager<ApplicationUser> userManager,
-            IJwtService jwtService, IEmailSender emailSender
-            )
+        public UserController(IUserService userService)
         {
-            _userManager = userManager;
-            _jwtService = jwtService;
+            _userService = userService;
         }
 
         [HttpGet("get-profile")]
@@ -31,18 +28,15 @@ namespace LaTiQ.WebAPI.Controllers
             ClaimsPrincipal principal = User;
             string email = principal.FindFirstValue(ClaimTypes.Email);
 
-            ApplicationUser? user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
+            UserProfileResponse? userProfile = await _userService.GetProfile(email);
+
+            if (userProfile == null)
             {
                 return BadRequest("Email does not exist");
             }
             else
             {
-                return Ok(new UserProfileResponse {
-                    Email = user.Email, 
-                    NickName = user.NickName, 
-                    Avatar = user.Avatar, 
-                });
+                return Ok(userProfile);
             }
         }
 
@@ -52,41 +46,15 @@ namespace LaTiQ.WebAPI.Controllers
             ClaimsPrincipal principal = User;
             string email = principal.FindFirstValue(ClaimTypes.Email);
 
-            ApplicationUser? user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
+            UserProfileResponse? userProfile = await _userService.UpdateProfile(email, req);
+
+            if (userProfile == null)
             {
-                return BadRequest("Email does not exist");
+                return BadRequest("Cập nhật tài khoản không thành công.");
             }
             else
             {
-                if (req.Email != null)
-                {
-                    user.Email = req.Email;
-                }
-                if (req.NickName != null)
-                {
-                    user.NickName = req.NickName;
-                }
-                if (req.Avatar != null)
-                {
-                    user.Avatar = req.Avatar;
-                }
-
-                IdentityResult result = await _userManager.UpdateAsync(user);
-                if (result.Succeeded)
-                {
-                    return Ok(new UserProfileResponse
-                    {
-                        Email = user.Email,
-                        NickName = user.NickName,
-                        Avatar = user.Avatar,
-                    });
-                }
-                else
-                {
-                    return BadRequest("Cập nhật thông tin không thành công.");
-                }
-               
+                return Ok(userProfile);
             }
         }
     }
