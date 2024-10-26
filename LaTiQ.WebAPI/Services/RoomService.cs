@@ -88,7 +88,7 @@ namespace LaTiQ.WebAPI.Services
 
                 RoomResponse roomResponse = new RoomResponse
                 {
-                    RoomId = room!.RoomId,
+                    RoomId = room.RoomId,
                     OwnerId = room.OwnerId,
                     Topic = _topicService.GetTopic(room.TopicId)!,
                     Round = room.Round,

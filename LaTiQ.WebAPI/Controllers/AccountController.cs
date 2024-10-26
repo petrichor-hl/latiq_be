@@ -101,12 +101,11 @@ namespace LaTiQ.WebAPI.Controllers
 
 
             SignInResult result = await _signInManager.PasswordSignInAsync(loginDTO.Email, loginDTO.Password, isPersistent: false, lockoutOnFailure: false);
-
+            ApplicationUser user = await _userManager.FindByEmailAsync(loginDTO.Email);
+            
             if (result.Succeeded)
             {
-                ApplicationUser user = await _userManager.FindByEmailAsync(loginDTO.Email);
                 JwtToken jwtToken = _jwtService.CreateJwtToken(user);
-
                 user.RefreshToken = jwtToken.RefreshToken;
                 user.RefreshTokenExpirationDateTime = jwtToken.RefreshTokenExpirationDateTime;
                 await _userManager.UpdateAsync(user);
@@ -120,7 +119,14 @@ namespace LaTiQ.WebAPI.Controllers
             }
             else
             {
-                return BadRequest("Email hoặc Mật khẩu không hợp lệ.");
+                if (user != null && !user.EmailConfirmed)
+                {
+                    return BadRequest("Email chưa được xác nhận.");
+                }
+                else
+                {
+                    return BadRequest("Email hoặc Mật khẩu không hợp lệ.");
+                }
             }
         }
 
@@ -180,7 +186,7 @@ namespace LaTiQ.WebAPI.Controllers
             string email = principal.FindFirstValue(ClaimTypes.Email);
             ApplicationUser? user = await _userManager.FindByEmailAsync(email);
 
-            if (user == null || user.RefreshToken != req.RefreshToken || user.RefreshTokenExpirationDateTime <= DateTime.Now)
+            if (user == null || user.RefreshToken != req.RefreshToken || user.RefreshTokenExpirationDateTime <= DateTime.UtcNow)
             {
                 return BadRequest("Invalid refreshToken");
             }

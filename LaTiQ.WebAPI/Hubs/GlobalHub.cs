@@ -40,7 +40,18 @@ namespace LaTiQ.WebAPI.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, userRoom.RoomId);
             _roomData.UserRooms[Context.ConnectionId] = userRoom;
 
-            await Clients.OthersInGroup(userRoom.RoomId).SendAsync("NewPlayer", _userService.GetProfile(userRoom.UserEmail));
+            await Clients.OthersInGroup(userRoom.RoomId).SendAsync("JoinRoom", await _userService.GetProfile(userRoom.UserEmail));
+        }
+
+        public async Task LeaveRoom()
+        {
+            if (_roomData.UserRooms.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, userRoom.RoomId);
+                _roomData.UserRooms.Remove(Context.ConnectionId);
+                // Inform to the others in group
+                await Clients.Group(userRoom.RoomId).SendAsync("LeaveRoom", userRoom.UserEmail);
+            }
         }
 
         #region Drawing
