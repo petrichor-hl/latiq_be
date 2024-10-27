@@ -70,22 +70,15 @@ namespace LaTiQ.WebAPI.Services
                 Round = room.Round,
                 Capacity = room.Capacity,
                 IsPublic = room.IsPublic,
-                Users = new List<UserProfileResponse>(),
             };
 
             return roomResponse;
         }
 
-        public async Task<RoomResponse?> GetRoom(string roomId)
+        public RoomResponse? GetRoom(string roomId)
         {
             if (_roomData.RoomInfo.TryGetValue(roomId, out Room? room))
             {
-                IEnumerable<Task<UserProfileResponse>> userProfileTasks = _roomData.UserRooms.Values
-                    .Where(e => e.RoomId == roomId)
-                    .Select(e => _userService.GetProfile(e.UserEmail));
-
-                IEnumerable<UserProfileResponse> usersInRoom = await Task.WhenAll(userProfileTasks);
-
                 RoomResponse roomResponse = new RoomResponse
                 {
                     RoomId = room.RoomId,
@@ -94,7 +87,6 @@ namespace LaTiQ.WebAPI.Services
                     Round = room.Round,
                     Capacity = room.Capacity,
                     IsPublic = room.IsPublic,
-                    Users = usersInRoom,
                 };
 
                 return roomResponse;

@@ -38,9 +38,14 @@ namespace LaTiQ.WebAPI.Hubs
         public async Task JoinRoom(UserRoom userRoom)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, userRoom.RoomId);
+            
+            var userInRooms = _roomData.UserRooms.Values
+                .Where(e => e.RoomId == userRoom.RoomId);
+            
+            await Clients.Caller.SendAsync("ReceiveUserInRooms", userInRooms);
+            await Clients.OthersInGroup(userRoom.RoomId).SendAsync("JoinRoom", userRoom);
+            
             _roomData.UserRooms[Context.ConnectionId] = userRoom;
-
-            await Clients.OthersInGroup(userRoom.RoomId).SendAsync("JoinRoom", await _userService.GetProfile(userRoom.UserEmail));
         }
 
         public async Task LeaveRoom()
@@ -49,8 +54,19 @@ namespace LaTiQ.WebAPI.Hubs
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, userRoom.RoomId);
                 _roomData.UserRooms.Remove(Context.ConnectionId);
-                // Inform to the others in group
-                await Clients.Group(userRoom.RoomId).SendAsync("LeaveRoom", userRoom.UserEmail);
+                
+                var userInRooms = _roomData.UserRooms.Values
+                    .Where(e => e.RoomId == userRoom.RoomId);
+                
+                if (userInRooms.Any())
+                {
+                    // Inform to the others in group
+                    await Clients.Group(userRoom.RoomId).SendAsync("LeaveRoom", userRoom.UserEmail);
+                }
+                else
+                {
+                    _roomData.RoomInfo.Remove(userRoom.RoomId);
+                }
             }
         }
 

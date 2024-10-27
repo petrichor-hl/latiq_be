@@ -22,7 +22,5 @@ namespace LaTiQ.Core.DTO.Response.Room
         public int Capacity { get; set; }
 
         public bool IsPublic { get; set; }
-
-        public IEnumerable<UserProfileResponse> Users { get; set; } = new List<UserProfileResponse>();
     }
 }

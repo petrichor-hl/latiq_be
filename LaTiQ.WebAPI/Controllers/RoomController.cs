@@ -50,7 +50,7 @@ namespace LaTiQ.WebAPI.Controllers
                 return BadRequest("Room ID is required.");
             }
 
-            RoomResponse? roomResponse = await _roomService.GetRoom(roomId);
+            RoomResponse? roomResponse = _roomService.GetRoom(roomId);
 
             if (roomResponse == null)
             {

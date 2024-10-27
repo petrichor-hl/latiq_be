@@ -7,6 +7,6 @@ namespace LaTiQ.WebAPI.ServiceContracts
     {
         public Task<RoomResponse?> MakeRoom(string email, MakeRoomRequest req);
 
-        public Task<RoomResponse?> GetRoom(string roomId);
+        public RoomResponse? GetRoom(string roomId);
     }
 }
