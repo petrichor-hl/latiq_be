@@ -93,11 +93,11 @@ namespace LaTiQ.WebAPI.Constants
                 .Builder()
                 .SetId(Guid.NewGuid())
                 .SetName("Pokemon")
-                .SetImageUrl("https://yt3.googleusercontent.com/wzEypbVsmY9BI-IbLwVius4UvC2rejtJB_PTXAdPpYXQ07EIjl5Ms55NCFq_dILwONpxrzE2xA=s900-c-k-c0x00ffffff-no-rj")
+                .SetImageUrl("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ32HfdVY5nMrFgAb4dNa5QniBkK2ZK76PUTQ&s")
                 .SetWords(pokemon)
                 .Build();
 
-        public static List<Topic> Topics = new List<Topic> { fruitTopic, nationalFlagTopic, animalTopic, programmingLanguagesTopic, animeTopic, pokemonTopic };
+        public static readonly List<Topic> Topics = new List<Topic> { animeTopic, pokemonTopic, fruitTopic, nationalFlagTopic, animalTopic, programmingLanguagesTopic  };
 
     }
 
