@@ -73,24 +73,33 @@ namespace LaTiQ.WebAPI.Hubs
         #region Drawing
         public async Task BeginPath(string strokeColor, float lineWidth, Point point)
         {
-            await Clients.Others.SendAsync("BeginPath", strokeColor, lineWidth, point);
+            if (_roomData.UserRooms.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
+            {
+                await Clients.OthersInGroup(userRoom.RoomId).SendAsync("BeginPath", strokeColor, lineWidth, point);
+            }
         }
 
         public async Task LineTo(Point point)
         {
-            await Clients.Others.SendAsync("LineTo", point);
+            if (_roomData.UserRooms.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
+            {
+                await Clients.OthersInGroup(userRoom.RoomId).SendAsync("LineTo", point);
+            }
         }
 
         public async Task Undo()
         {
-            Console.WriteLine("Undo");
-            await Clients.Others.SendAsync("Undo");
+            if (_roomData.UserRooms.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
+            {
+                await Clients.OthersInGroup(userRoom.RoomId).SendAsync("Undo");
+            }
         }
         #endregion
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             await base.OnDisconnectedAsync(exception);
+            await LeaveRoom();
         }
     }
 }
