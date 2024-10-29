@@ -37,7 +37,7 @@ namespace LaTiQ.WebAPI.Services
                 return null;
             }
 
-            int currentCount = _roomData._uniqueNumbers.Count;
+            int currentCount = _roomData.UniqueNumbers.Count;
             int hashCode;
             do
             {
@@ -46,8 +46,8 @@ namespace LaTiQ.WebAPI.Services
                 {
                     hashCode *= -1;
                 }
-                _roomData._uniqueNumbers.Add(hashCode);
-            } while (_roomData._uniqueNumbers.Count == currentCount);
+                _roomData.UniqueNumbers.Add(hashCode);
+            } while (_roomData.UniqueNumbers.Count == currentCount);
 
 
             Room room = new()

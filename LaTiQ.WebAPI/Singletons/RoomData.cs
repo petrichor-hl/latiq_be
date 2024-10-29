@@ -5,7 +5,7 @@ namespace LaTiQ.WebAPI.Singletons
 {
     public class RoomData
     {
-        public readonly HashSet<int> _uniqueNumbers = new();
+        public readonly HashSet<int> UniqueNumbers = new();
 
         // Dictionary<roomId, Room>
         public Dictionary<string, Room> RoomInfo { get; set; } = new Dictionary<string, Room>();

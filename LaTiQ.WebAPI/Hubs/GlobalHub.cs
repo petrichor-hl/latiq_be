@@ -48,6 +48,15 @@ namespace LaTiQ.WebAPI.Hubs
             _roomData.UserRooms[Context.ConnectionId] = userRoom;
         }
 
+        public async Task ChangeCameraStatus(CameraStatus cameraStatus)
+        {
+            if (_roomData.UserRooms.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
+            {
+                userRoom.CameraStatus = cameraStatus;
+                await Clients.OthersInGroup(userRoom.RoomId).SendAsync("ChangeCameraStatus", userRoom.UserEmail, cameraStatus);
+            }
+        }
+
         public async Task LeaveRoom()
         {
             if (_roomData.UserRooms.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
