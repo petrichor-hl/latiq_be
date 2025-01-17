@@ -1,14 +1,10 @@
-﻿using LaTiQ.Core.DTO.Request.Room;
-using LaTiQ.Core.DTO.Response.Room;
-using LaTiQ.Core.DTO.Response.User;
-using LaTiQ.Core.Entities;
-using LaTiQ.Core.Entities.Room;
+﻿using LaTiQ.Core.Entities;
 using LaTiQ.WebAPI.ServiceContracts;
-using LaTiQ.WebAPI.Services;
 using LaTiQ.WebAPI.Singletons;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
+using LaTiQ.Application.Enum;
+using LaTiQ.Application.Models;
 
 namespace LaTiQ.WebAPI.Hubs
 {

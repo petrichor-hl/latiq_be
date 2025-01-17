@@ -1,9 +1,5 @@
-﻿using LaTiQ.Core.DTO.Request;
-using LaTiQ.Core.Identity;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace LaTiQ.WebAPI.Controllers
 {

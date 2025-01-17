@@ -14,22 +14,35 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using LaTiQ.WebAPI.CustomJsonConverter;
+using LaTiQ.WebAPI.Filters;
+using LaTiQ.WebAPI.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.AddControllers(options =>
 {
-    //Authorization policy
+    // Authorization policy
     var policy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
     options.Filters.Add(new AuthorizeFilter(policy));
+    // Model Validation
+    options.Filters.Add<ModelValidation>();
 })
- .AddXmlSerializerFormatters();
+ .AddXmlSerializerFormatters()
+ .AddJsonOptions(options =>
+ {
+     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+     options.JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
+ });
 
 // Add services to the container.
 builder.Services.AddTransient<IJwtService, JwtService>()
     .AddTransient<IEmailSender, EmailSender>()
+    .AddScoped<IAccountService, AccountService>()
     .AddScoped<ITopicService, TopicService>()
     .AddScoped<IUserService, UserService>()
     .AddScoped<IRoomService, RoomService>()
@@ -49,7 +62,6 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
-
 });
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -81,74 +93,69 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
  * thì chỉ cần gán [AllowAnonymous] ở đầu action 
  * (VD: TestController)
  */
-builder.Services.AddAuthentication(options => {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-})
- .AddJwtBearer(options => {
-     options.TokenValidationParameters = new TokenValidationParameters()
-     {
-         ValidateAudience = true,
-         ValidAudience = builder.Configuration["Jwt:Audience"],
-         ValidateIssuer = true,
-         ValidIssuer = builder.Configuration["Jwt:Issuer"],
-         ValidateLifetime = true,
-         ValidateIssuerSigningKey = true,
-         IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-     };
-     options.Events = new JwtBearerEvents
-     {
-         OnTokenValidated = async context =>
-         {
-             // Console.WriteLine("OnTokenValidated");
-             // Có thể dùng cách này:
-             // IEnumerable<Claim>? claims = context.Principal?.Claims;
-             // Claim? emailClaim = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+        options.Events = new JwtBearerEvents
+        {
+            /*
+             * Invoked after the security token has passed validation and a ClaimsIdentity has been generated.
+             * Tức là nó phải pass những điều kiện ở trên "TokenValidationParameters"
+             * Thì OnTokenValidated mới được gọi
+             */
+            OnTokenValidated = async context =>
+            {
+                var userIdClaim = context.Principal.FindFirstValue("UserId");
+                if (userIdClaim == null) context.Fail("Token không chứa thuộc tính UserId.");
 
-             string? emailClaim = context.Principal.FindFirstValue(ClaimTypes.Email);
-             if (emailClaim == null)
-             {
-                 context.Fail("Token không chứa thuộc tính Email.");
-             }
+                var userManager =
+                    context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
 
-             var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+                var user = await userManager.FindByIdAsync(userIdClaim);
+                var tokenVersionClaim = context.Principal.FindFirstValue("tokenVersion");
 
-             ApplicationUser? user = await userManager.FindByEmailAsync(emailClaim);
-             string? tokenVersionClaim = context.Principal.FindFirstValue("tokenVersion");
+                if (user == null)
+                    context.Fail("Không tìm thấy người dùng");
+                else if (!int.TryParse(tokenVersionClaim, out var intTokenVersion) ||
+                         intTokenVersion != user.TokenVersion) context.Fail("Access Token không hợp lệ.");
+            },
+            /* Invoked before a challenge is sent back to the caller. */
+            OnChallenge = context =>
+            {
+                // Customize the response if token validation fails
+                if (!context.Handled)
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    context.Response.ContentType = "application/json";
 
-             if (user == null)
-             {
-                 context.Fail("Không tìm thấy người dùng");
+                    var result = JsonSerializer.Serialize(new
+                    {
+                        error = "invalid_token",
+                        error_description = context.AuthenticateFailure?.Message ?? "User authentication failed"
+                    });
 
-             }
-             else if (!int.TryParse(tokenVersionClaim, out int intTokenVersion) || intTokenVersion != user.TokenVersion)
-             {
-                 context.Fail("Access Token không hợp lệ.");
-             }
-         },
-         OnChallenge = context =>
-         {
-             // Customize the response if token validation fails
-             if (!context.Handled)
-             {
-                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                 context.Response.ContentType = "application/json";
+                    return context.Response.WriteAsync(result);
+                }
 
-                 var result = JsonSerializer.Serialize(new
-                 {
-                     error = "invalid_token",
-                     error_description = context.AuthenticateFailure?.Message ?? "User authentication failed"
-                 });
-
-                 return context.Response.WriteAsync(result);
-             }
-             return Task.CompletedTask;
-         }
-     };
- });
-
-builder.Services.AddSignalR();
+                return Task.CompletedTask;
+            }
+        };
+    });
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
@@ -156,6 +163,7 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
     options.TokenLifespan = TimeSpan.FromHours(3);
 });
 
+builder.Services.AddSignalR();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -175,5 +183,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.MapHub<GlobalHub>("global-hub");
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.Run();

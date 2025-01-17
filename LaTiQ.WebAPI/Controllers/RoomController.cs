@@ -1,16 +1,9 @@
-﻿using LaTiQ.Core.DTO.Request.Room;
-using LaTiQ.Core.DTO.Response.Room;
-using LaTiQ.Core.DTO.Response.Topic;
-using LaTiQ.Core.DTO.Response.User;
-using LaTiQ.Core.Entities.Room;
-using LaTiQ.Core.Identity;
-using LaTiQ.Infrastructure.DatabaseContext;
-using LaTiQ.WebAPI.ServiceContracts;
-using LaTiQ.WebAPI.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+﻿using LaTiQ.WebAPI.ServiceContracts;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using LaTiQ.Application.DTOs;
+using LaTiQ.Core.DTOs.Room.Req;
+using LaTiQ.Core.DTOs.Room.Res;
 
 namespace LaTiQ.WebAPI.Controllers
 {
@@ -25,41 +18,15 @@ namespace LaTiQ.WebAPI.Controllers
         }
 
         [HttpPost("make-room")]
-        public async Task<IActionResult> MakeRoom(MakeRoomRequest req)
+        public async Task<IActionResult> MakeRoom(MakeRoomRequest makeRoomRequest)
         {
-            ClaimsPrincipal principal = User;
-            string email = principal.FindFirstValue(ClaimTypes.Email);
-
-            RoomResponse? roomResponse = await _roomService.MakeRoom(email, req);
-
-            if (roomResponse == null)
-            {
-                return BadRequest("Tạo phòng không thành công.");
-            }
-            else
-            {
-                return Ok(roomResponse);
-            }
+            return Ok(ApiResult<RoomResponse>.Success(await _roomService.MakeRoom(makeRoomRequest)));
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetRoom([FromQuery] string roomId)
+        [HttpGet("{roomId}")]
+        public IActionResult GetRoom(string roomId)
         {
-            if (string.IsNullOrEmpty(roomId))
-            {
-                return BadRequest("Room ID is required.");
-            }
-
-            RoomResponse? roomResponse = _roomService.GetRoom(roomId);
-
-            if (roomResponse == null)
-            {
-                return BadRequest("Không tìm thấy phòng.");
-            }
-            else
-            {
-                return Ok(roomResponse);
-            }
+            return Ok(ApiResult<RoomResponse>.Success(_roomService.GetRoom(roomId)));
         }
     }
 }

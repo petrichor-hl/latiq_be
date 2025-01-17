@@ -1,11 +1,11 @@
-﻿using LaTiQ.Core.DTO.Request.User;
-using LaTiQ.Core.DTO.Response.User;
+﻿using LaTiQ.Application.DTOs.User.Req;
+using LaTiQ.Core.DTOs.User.Res;
 
 namespace LaTiQ.WebAPI.ServiceContracts
 {
     public interface IUserService
     {
-        public Task<UserProfileResponse> GetProfile(string email);
-        public Task<UserProfileResponse?> UpdateProfile(string email, UpdateUserProfileRequest req);
+        public Task<UserProfileResponse> GetProfile();
+        public Task<UserProfileResponse> UpdateProfile(UpdateUserProfileRequest req);
     }
 }

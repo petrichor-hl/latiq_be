@@ -1,5 +1,5 @@
-﻿using LaTiQ.Core.DTO.Request.Room;
-using LaTiQ.Core.Entities.Room;
+﻿using LaTiQ.Application.Models;
+using LaTiQ.Core.Entities;
 
 namespace LaTiQ.WebAPI.Singletons
 {

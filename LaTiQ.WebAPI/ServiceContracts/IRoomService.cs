@@ -1,12 +1,12 @@
-﻿using LaTiQ.Core.DTO.Request.Room;
-using LaTiQ.Core.DTO.Response.Room;
+﻿using LaTiQ.Core.DTOs.Room.Req;
+using LaTiQ.Core.DTOs.Room.Res;
 
 namespace LaTiQ.WebAPI.ServiceContracts
 {
     public interface IRoomService
     {
-        public Task<RoomResponse?> MakeRoom(string email, MakeRoomRequest req);
+        public Task<RoomResponse> MakeRoom(MakeRoomRequest makeRoomRequest);
 
-        public RoomResponse? GetRoom(string roomId);
+        public RoomResponse GetRoom(string roomId);
     }
 }

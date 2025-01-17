@@ -1,5 +1,4 @@
-﻿using LaTiQ.Core.Entities.Topic;
-using System.Collections.Generic;
+﻿using LaTiQ.Core.Entities;
 
 namespace LaTiQ.WebAPI.Constants
 {
@@ -97,7 +96,15 @@ namespace LaTiQ.WebAPI.Constants
                 .SetWords(pokemon)
                 .Build();
 
-        public static readonly List<Topic> Topics = new List<Topic> { animeTopic, pokemonTopic, fruitTopic, nationalFlagTopic, animalTopic, programmingLanguagesTopic  };
+        public static readonly List<Topic> Topics = new List<Topic>
+        {
+                animeTopic, 
+                pokemonTopic, 
+                fruitTopic, 
+                nationalFlagTopic, 
+                animalTopic, 
+                programmingLanguagesTopic
+        };
 
     }
 

@@ -1,5 +1,6 @@
-﻿using LaTiQ.Core.DTO.Request.User;
-using LaTiQ.Core.DTO.Response.User;
+﻿using System.Security.Claims;
+using LaTiQ.Application.DTOs.User.Req;
+using LaTiQ.Core.DTOs.User.Res;
 using LaTiQ.Core.Identity;
 using LaTiQ.WebAPI.ServiceContracts;
 using Microsoft.AspNetCore.Identity;
@@ -9,14 +10,19 @@ namespace LaTiQ.WebAPI.Services
     public class UserService : IUserService
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        public UserService(UserManager<ApplicationUser> userManager)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public UserService(UserManager<ApplicationUser> userManager, IHttpContextAccessor httpContextAccessor)
         {
             _userManager = userManager;
+            _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<UserProfileResponse> GetProfile(string email)
+        public async Task<UserProfileResponse> GetProfile()
         {
-            ApplicationUser user = await _userManager.FindByEmailAsync(email);
+            var principal = _httpContextAccessor.HttpContext?.User;
+            var email = principal.FindFirstValue(ClaimTypes.Email);
+            
+            var user = await _userManager.FindByEmailAsync(email);
 
             return new UserProfileResponse
             {
@@ -27,33 +33,23 @@ namespace LaTiQ.WebAPI.Services
             };
         }
 
-        public async Task<UserProfileResponse?> UpdateProfile(string email, UpdateUserProfileRequest req)
+        public async Task<UserProfileResponse> UpdateProfile(UpdateUserProfileRequest req)
         {
-            ApplicationUser? user = await _userManager.FindByEmailAsync(email);
-
-            if (req.NickName != null)
+            var principal = _httpContextAccessor.HttpContext?.User;
+            var email = principal.FindFirstValue(ClaimTypes.Email);
+            
+            var user = await _userManager.FindByEmailAsync(email);
+            user.NickName = req.NickName;
+            user.Avatar = req.Avatar;
+            
+            await _userManager.UpdateAsync(user);
+            
+            return new UserProfileResponse
             {
-                user.NickName = req.NickName;
-            }
-            if (req.Avatar != null)
-            {
-                user.Avatar = req.Avatar;
-            }
-            IdentityResult result = await _userManager.UpdateAsync(user);
-
-            if (result.Succeeded)
-            {
-                return new UserProfileResponse
-                {
-                    Email = user.Email,
-                    NickName = user.NickName,
-                    Avatar = user.Avatar,
-                };
-            }
-            else
-            {
-                return null;
-            }
+                Email = user.Email,
+                NickName = user.NickName,
+                Avatar = user.Avatar,
+            };
         }
     }
 }

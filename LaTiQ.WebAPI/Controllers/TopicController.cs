@@ -1,7 +1,6 @@
-﻿using LaTiQ.Core.DTO.Response.Topic;
-using LaTiQ.WebAPI.Constants;
+﻿using LaTiQ.Application.DTOs;
+using LaTiQ.Core.DTOs.Topic.Res;
 using LaTiQ.WebAPI.ServiceContracts;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LaTiQ.WebAPI.Controllers
@@ -20,22 +19,13 @@ namespace LaTiQ.WebAPI.Controllers
         [HttpGet]
         public IActionResult GetListTopic()
         {
-            return Ok(_topicService.GetListTopic());
+            return Ok(ApiResult<IEnumerable<TopicResponse>>.Success(_topicService.GetListTopic()));
         }
 
-        [HttpGet("{topicId}")]
+        [HttpGet("{topicId:guid}")]
         public IActionResult GetTopic(Guid topicId)
         {
-            TopicResponse? topicResponse = _topicService.GetTopic(topicId);
-
-            if (topicResponse == null)
-            {
-                return BadRequest("Topic Id không tồn tại");
-            } 
-            else
-            {
-                return Ok(topicResponse);
-            }
+            return Ok(ApiResult<TopicResponse>.Success(_topicService.GetTopic(topicId)));
         }
     }
 }

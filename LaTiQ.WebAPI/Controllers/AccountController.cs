@@ -1,17 +1,9 @@
-﻿using LaTiQ.Core.DTO.Request.Account;
-using LaTiQ.Core.DTO.Response;
-using LaTiQ.Core.Entities;
-using LaTiQ.Core.Identity;
-using LaTiQ.Core.ServiceContracts;
-using LaTiQ.Infrastructure;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
-using System.Web;
-using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
+using LaTiQ.Application.DTOs;
+using LaTiQ.Core.DTOs.Account.Req;
+using LaTiQ.Core.DTOs.Account.Res;
+using LaTiQ.WebAPI.ServiceContracts;
 
 namespace LaTiQ.WebAPI.Controllers
 {
@@ -19,221 +11,45 @@ namespace LaTiQ.WebAPI.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RoleManager<ApplicationRole> _roleManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IAccountService _accountService;
 
-        private readonly IJwtService _jwtService;
-        private readonly IEmailSender _emailSender;
-
-        private readonly IConfiguration _configuration;
-
-        public AccountController(
-            UserManager<ApplicationUser> userManager, 
-            RoleManager<ApplicationRole> roleManager, 
-            SignInManager<ApplicationUser> signInManager, 
-            IJwtService jwtService, IEmailSender emailSender, 
-            IConfiguration configuration
-            )
+        public AccountController(IAccountService accountService)
         {
-            _userManager = userManager;
-             _roleManager = roleManager;
-            _signInManager = signInManager;
-            _jwtService = jwtService;
-            _emailSender = emailSender;
-            _configuration = configuration;
+            _accountService = accountService;
         }
 
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterDTO registerDTO)
+        public async Task<IActionResult> Register(RegisterRequest registerRequest)
         {
-            if (ModelState.IsValid == false)
-            {
-                string errorMessage = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return BadRequest(errorMessage);
-            }
-
-            if (IsEmailAlreadyRegistered(registerDTO.Email))
-            {
-                return BadRequest("The Email is already registered");
-            }
-
-            ApplicationUser user = new()
-            {
-                Email = registerDTO.Email,
-                UserName = registerDTO.Email,   // UserName is used for login
-                NickName = registerDTO.NickName,
-                Avatar = registerDTO.Avatar,
-            };
-
-            IdentityResult result = await _userManager.CreateAsync(user, registerDTO.Password);
-
-            if (result.Succeeded)
-            {
-                string verifyEmailToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                string verifyEmailTokenEncoded = HttpUtility.UrlEncode(verifyEmailToken);
-                Console.WriteLine("verifyEmailToken = " + verifyEmailToken);
-
-                string confirmLink = $"{_configuration["LatiqUrlWeb"]}/#/confirm-email?email={registerDTO.Email}&verifyEmailToken={verifyEmailTokenEncoded}";
-
-                //await _emailSender.SendMailAsync(registerDTO.Email, "[LaTiQ] Please confirm your email address", EmailTemplate.ConfirmEmail(registerDTO.NickName, redirectTo: confirmLink));
-
-                return Ok("Account created! Please confirm your email in the inbox.");
-            }
-            else
-            {
-                string errorMessage = string.Join(" | ", result.Errors.Select(e => e.Description)); //error1 | error2
-                return Problem(errorMessage, statusCode: 400);
-            }
+            return Ok(ApiResult<Guid>.Success(await _accountService.Register(registerRequest)));
         }
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginDTO loginDTO)
+        public async Task<IActionResult> Login(LoginRequest loginRequest)
         {
-            //Validation
-            if (ModelState.IsValid == false)
-            {
-                string errorMessage = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return Problem(errorMessage);
-            }
-
-
-            SignInResult result = await _signInManager.PasswordSignInAsync(loginDTO.Email, loginDTO.Password, isPersistent: false, lockoutOnFailure: false);
-            ApplicationUser user = await _userManager.FindByEmailAsync(loginDTO.Email);
-            
-            if (result.Succeeded)
-            {
-                JwtToken jwtToken = _jwtService.CreateJwtToken(user);
-                user.RefreshToken = jwtToken.RefreshToken;
-                user.RefreshTokenExpirationDateTime = jwtToken.RefreshTokenExpirationDateTime;
-                await _userManager.UpdateAsync(user);
-
-                return Ok(new AuthenticationResponse
-                {
-                    Email = loginDTO.Email,
-                    AccessToken = jwtToken.AccessToken,
-                    RefreshToken = jwtToken.RefreshToken,
-                });
-            }
-            else
-            {
-                if (user != null && !user.EmailConfirmed)
-                {
-                    return BadRequest("Email chưa được xác nhận.");
-                }
-                else
-                {
-                    return BadRequest("Email hoặc Mật khẩu không hợp lệ.");
-                }
-            }
+            return Ok(ApiResult<LoginSuccessResponse>.Success(await _accountService.Login(loginRequest)));
         }
 
         [AllowAnonymous]
         [HttpPost("confirm-email")]
-        public async Task<IActionResult> ConfirmEmail(ConfirmEmailDTO confirmEmailDTO)
+        public async Task<IActionResult> ConfirmEmail(ConfirmEmailRequest confirmEmailRequest)
         {
-            if (string.IsNullOrEmpty(confirmEmailDTO.Email) || string.IsNullOrEmpty(confirmEmailDTO.VerifyEmailToken))
-            {
-                return BadRequest("Invalid Request");
-            }
-
-            ApplicationUser? user = await _userManager.FindByEmailAsync(confirmEmailDTO.Email);
-            if (user == null)
-            {
-                return BadRequest("User Not Found");
-            }
-
-            Console.WriteLine("verifyEmailToken = " + confirmEmailDTO.VerifyEmailToken);
-            var result = await _userManager.ConfirmEmailAsync(user, confirmEmailDTO.VerifyEmailToken);
-            if (result.Succeeded)
-            {
-                return Ok("Email confirmation successful.");
-            }
-            else
-            {
-                return BadRequest("Email confirmation failed.");
-            }
+            return Ok(ApiResult<bool>.Success(await _accountService.ConfirmEmail(confirmEmailRequest)));
         }
 
         [AllowAnonymous]
-        [HttpPost("generate-new-jwt-token")]
-        public async Task<IActionResult> GenerateNewAccessToken(RefreshJwtTokenDTO req)
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> GenerateNewAccessToken(RefreshJwtTokenRequest refreshJwtTokenRequest)
         {
-            if (req.AccessToken == null) 
-            {
-                return BadRequest("Not Found accessToken");
-            } 
-
-            if (req.RefreshToken == null)
-            {
-                return BadRequest("Not Found refreshToken");
-            }
-
-            ClaimsPrincipal? principal;
-            try
-            {
-                 principal = _jwtService.GetPrincipalFromJwtToken(req.AccessToken);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Exception: " + ex.GetType().FullName);
-                Console.WriteLine("Message: " + ex.Message);
-                return BadRequest("Invalid jwt access token");
-            }
-
-            string email = principal.FindFirstValue(ClaimTypes.Email);
-            ApplicationUser? user = await _userManager.FindByEmailAsync(email);
-
-            if (user == null || user.RefreshToken != req.RefreshToken || user.RefreshTokenExpirationDateTime <= DateTime.UtcNow)
-            {
-                return BadRequest("Invalid refreshToken");
-            }
-
-            JwtToken jwtToken = _jwtService.CreateJwtToken(user);
-
-            user.RefreshToken = jwtToken.RefreshToken;
-            user.RefreshTokenExpirationDateTime = jwtToken.RefreshTokenExpirationDateTime;
-            await _userManager.UpdateAsync(user);
-
-            return Ok(new AuthenticationResponse
-            {
-                Email = email,
-                AccessToken = jwtToken.AccessToken,
-                RefreshToken = jwtToken.RefreshToken,
-            });
+            return Ok(ApiResult<RefreshTokenSuccessResponse>.Success(await _accountService.RefreshToken(refreshJwtTokenRequest)));
         }
 
         [HttpGet("logout")]
         public async Task<IActionResult> Logout()
         {
-            // Chưa rõ tác dụng của:
-            // await _signInManager.SignOutAsync();
-
-            ClaimsPrincipal principal = User;
-            string email = principal.FindFirstValue(ClaimTypes.Email);
-
-            ApplicationUser? user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
-            {
-                return BadRequest("Email does not exist");
-            }
-            else
-            {
-                user.RefreshToken = null;
-                user.RefreshTokenExpirationDateTime = null;
-                user.TokenVersion++;
-                await _userManager.UpdateAsync(user);
-                return Ok("The user has been logged out");
-            }
-
+            return Ok(ApiResult<bool>.Success(await _accountService.Logout()));
         }
-
-        private bool IsEmailAlreadyRegistered(string email)
-        {
-            return _userManager.Users.Any(u => u.Email == email);
-        }
-
     }
 }

@@ -1,4 +1,5 @@
-﻿using LaTiQ.Core.DTO.Response.Topic;
+﻿using LaTiQ.Application.Exceptions;
+using LaTiQ.Core.DTOs.Topic.Res;
 using LaTiQ.WebAPI.Constants;
 using LaTiQ.WebAPI.ServiceContracts;
 
@@ -16,23 +17,21 @@ namespace LaTiQ.WebAPI.Services
             });
         }
 
-        public TopicResponse? GetTopic(Guid topicId)
+        public TopicResponse GetTopic(Guid topicId)
         {
-            var topic = TopicData.Topics.Find(topic => topic.Id.Equals(topicId));
+            var topic = TopicData.Topics.Find(topic => topic.Id == topicId);
 
             if (topic == null)
             {
-                return null;
+                throw new NotFoundException($"Không tìm thấy Topic {topicId}");
             }
-            else
+            
+            return new TopicResponse
             {
-                return new TopicResponse
-                {
-                    Id = topic.Id,
-                    Name = topic.Name,
-                    ImageUrl = topic.ImageUrl
-                };
-            }
+                Id = topic.Id,
+                Name = topic.Name,
+                ImageUrl = topic.ImageUrl
+            };
         }
     }
 }

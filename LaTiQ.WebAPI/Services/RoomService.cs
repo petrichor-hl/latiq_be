@@ -1,8 +1,9 @@
-﻿using LaTiQ.Core.DTO.Request.Room;
-using LaTiQ.Core.DTO.Response.Room;
-using LaTiQ.Core.DTO.Response.Topic;
-using LaTiQ.Core.DTO.Response.User;
-using LaTiQ.Core.Entities.Room;
+﻿using System.Security.Claims;
+using LaTiQ.Application.Exceptions;
+using LaTiQ.Core.DTOs.Room.Req;
+using LaTiQ.Core.DTOs.Room.Res;
+using LaTiQ.Core.DTOs.Topic.Res;
+using LaTiQ.Core.Entities;
 using LaTiQ.Core.Identity;
 using LaTiQ.WebAPI.ServiceContracts;
 using LaTiQ.WebAPI.Singletons;
@@ -14,27 +15,35 @@ namespace LaTiQ.WebAPI.Services
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ITopicService _topicService;
-        private readonly IUserService _userService;
-
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        
         private readonly RoomData _roomData;
 
-        public RoomService(UserManager<ApplicationUser> userManager, IUserService userService, ITopicService topicService, RoomData roomData)
+        public RoomService(
+            UserManager<ApplicationUser> userManager, 
+            IUserService userService, 
+            ITopicService topicService, 
+            IHttpContextAccessor httpContextAccessor, 
+            RoomData roomData
+            )
         {
             _userManager = userManager;
             _topicService = topicService;
-            _userService = userService;
-
+            _httpContextAccessor = httpContextAccessor;
             _roomData = roomData;
         }
 
-        public async Task<RoomResponse?> MakeRoom(string email, MakeRoomRequest req)
+        public async Task<RoomResponse> MakeRoom(MakeRoomRequest makeRoomRequest)
         {
-            ApplicationUser user = await _userManager.FindByEmailAsync(email);
+            var principal = _httpContextAccessor.HttpContext?.User;
+            var email = principal.FindFirstValue(ClaimTypes.Email);
+            
+            var user = await _userManager.FindByEmailAsync(email);
 
-            TopicResponse? topicResponse = _topicService.GetTopic(req.TopicId);
+            var topicResponse = _topicService.GetTopic(makeRoomRequest.TopicId);
             if (topicResponse == null)
             {
-                return null;
+                throw new NotFoundException($"Không tìm thấy Topic {makeRoomRequest.TopicId}");
             }
 
             int currentCount = _roomData.UniqueNumbers.Count;
@@ -54,15 +63,15 @@ namespace LaTiQ.WebAPI.Services
             {
                 RoomId = hashCode.ToString(),
                 OwnerId = user.Id,
-                TopicId = req.TopicId,
-                Round = req.Round,
-                Capacity = req.Capacity,
-                IsPublic = req.IsPublic
+                TopicId = makeRoomRequest.TopicId,
+                Round = makeRoomRequest.Round,
+                Capacity = makeRoomRequest.Capacity,
+                IsPublic = makeRoomRequest.IsPublic
             };
 
             _roomData.RoomInfo[room.RoomId] = room;
 
-            RoomResponse roomResponse = new RoomResponse
+            return new RoomResponse
             {
                 RoomId = room.RoomId,
                 OwnerId = room.OwnerId,
@@ -71,30 +80,25 @@ namespace LaTiQ.WebAPI.Services
                 Capacity = room.Capacity,
                 IsPublic = room.IsPublic,
             };
-
-            return roomResponse;
         }
 
-        public RoomResponse? GetRoom(string roomId)
+        public RoomResponse GetRoom(string roomId)
         {
-            if (_roomData.RoomInfo.TryGetValue(roomId, out Room? room))
+            var room = _roomData.RoomInfo.GetValueOrDefault(roomId);
+            if (room == null)
             {
-                RoomResponse roomResponse = new RoomResponse
-                {
-                    RoomId = room.RoomId,
-                    OwnerId = room.OwnerId,
-                    Topic = _topicService.GetTopic(room.TopicId)!,
-                    Round = room.Round,
-                    Capacity = room.Capacity,
-                    IsPublic = room.IsPublic,
-                };
-
-                return roomResponse;
+                throw new NotFoundException($"Không tìm thấy Room {roomId}");
             }
-            else
+            
+            return new RoomResponse
             {
-                return null;
-            }
+                RoomId = room.RoomId,
+                OwnerId = room.OwnerId,
+                Topic = _topicService.GetTopic(room.TopicId)!,
+                Round = room.Round,
+                Capacity = room.Capacity,
+                IsPublic = room.IsPublic,
+            };
         }
     }
 }

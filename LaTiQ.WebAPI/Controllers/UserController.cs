@@ -1,13 +1,9 @@
-﻿using LaTiQ.Core.DTO.Request.User;
-using LaTiQ.Core.DTO.Response.User;
-using LaTiQ.Core.Identity;
-using LaTiQ.Core.ServiceContracts;
-using LaTiQ.WebAPI.ServiceContracts;
-using LaTiQ.WebAPI.Services;
-using Microsoft.AspNetCore.Identity;
+﻿using LaTiQ.WebAPI.ServiceContracts;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using LaTiQ.Application.DTOs;
+using LaTiQ.Application.DTOs.User.Req;
+using LaTiQ.Core.DTOs.User.Res;
 
 namespace LaTiQ.WebAPI.Controllers
 {
@@ -25,37 +21,13 @@ namespace LaTiQ.WebAPI.Controllers
         [HttpGet("get-profile")]
         public async Task<IActionResult> GetProfile()
         {
-            ClaimsPrincipal principal = User;
-            string email = principal.FindFirstValue(ClaimTypes.Email);
-
-            UserProfileResponse? userProfile = await _userService.GetProfile(email);
-
-            if (userProfile == null)
-            {
-                return BadRequest("Email does not exist");
-            }
-            else
-            {
-                return Ok(userProfile);
-            }
+            return Ok(ApiResult<UserProfileResponse>.Success(await _userService.GetProfile()));
         }
 
         [HttpPut("update-profile")]
-        public async Task<IActionResult> UpdateProfile(UpdateUserProfileRequest req)
+        public async Task<IActionResult> UpdateProfile(UpdateUserProfileRequest updateUserProfileRequest)
         {
-            ClaimsPrincipal principal = User;
-            string email = principal.FindFirstValue(ClaimTypes.Email);
-
-            UserProfileResponse? userProfile = await _userService.UpdateProfile(email, req);
-
-            if (userProfile == null)
-            {
-                return BadRequest("Cập nhật tài khoản không thành công.");
-            }
-            else
-            {
-                return Ok(userProfile);
-            }
+            return Ok(ApiResult<UserProfileResponse>.Success(await _userService.UpdateProfile(updateUserProfileRequest)));
         }
     }
 }
