@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
+using LaTiQ.Application.DTOs.Room.Req;
+using LaTiQ.Application.DTOs.Room.Res;
 using LaTiQ.Application.Exceptions;
-using LaTiQ.Core.DTOs.Room.Req;
-using LaTiQ.Core.DTOs.Room.Res;
 using LaTiQ.Core.DTOs.Topic.Res;
 using LaTiQ.Core.Entities;
 using LaTiQ.Core.Identity;
@@ -40,8 +40,8 @@ namespace LaTiQ.WebAPI.Services
             
             var user = await _userManager.FindByEmailAsync(email);
 
-            var topicResponse = _topicService.GetTopic(makeRoomRequest.TopicId);
-            if (topicResponse == null)
+            var topic = _topicService.GetTopic(makeRoomRequest.TopicId);
+            if (topic == null)
             {
                 throw new NotFoundException($"Không tìm thấy Topic {makeRoomRequest.TopicId}");
             }
@@ -63,10 +63,12 @@ namespace LaTiQ.WebAPI.Services
             {
                 RoomId = hashCode.ToString(),
                 OwnerId = user.Id,
-                TopicId = makeRoomRequest.TopicId,
-                Round = makeRoomRequest.Round,
+                Topic = topic,
+                Points = makeRoomRequest.Points,
                 Capacity = makeRoomRequest.Capacity,
-                IsPublic = makeRoomRequest.IsPublic
+                Turn = 0,
+                IsPublic = makeRoomRequest.IsPublic,
+                IsLocked = false,
             };
 
             _roomData.RoomInfo[room.RoomId] = room;
@@ -74,9 +76,14 @@ namespace LaTiQ.WebAPI.Services
             return new RoomResponse
             {
                 RoomId = room.RoomId,
-                OwnerId = room.OwnerId,
-                Topic = topicResponse,
-                Round = room.Round,
+                OwnerId = user.Id,
+                Topic = new TopicResponse
+                {
+                    Id = topic.Id,
+                    Name = topic.Name,
+                    ImageUrl = topic.ImageUrl,
+                },
+                Points = room.Points,
                 Capacity = room.Capacity,
                 IsPublic = room.IsPublic,
             };
@@ -89,13 +96,23 @@ namespace LaTiQ.WebAPI.Services
             {
                 throw new NotFoundException($"Không tìm thấy Room {roomId}");
             }
+
+            if (room.IsLocked)
+            {
+                throw new NotFoundException($"Room {roomId} đã khoá");
+            }
             
             return new RoomResponse
             {
                 RoomId = room.RoomId,
                 OwnerId = room.OwnerId,
-                Topic = _topicService.GetTopic(room.TopicId)!,
-                Round = room.Round,
+                Topic = new TopicResponse
+                {
+                    Id = room.Topic.Id,
+                    Name = room.Topic.Name,
+                    ImageUrl = room.Topic.ImageUrl,
+                },
+                Points = room.Points,
                 Capacity = room.Capacity,
                 IsPublic = room.IsPublic,
             };

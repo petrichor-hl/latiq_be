@@ -1,5 +1,6 @@
 ﻿using LaTiQ.Application.Exceptions;
 using LaTiQ.Core.DTOs.Topic.Res;
+using LaTiQ.Core.Entities;
 using LaTiQ.WebAPI.Constants;
 using LaTiQ.WebAPI.ServiceContracts;
 
@@ -17,7 +18,7 @@ namespace LaTiQ.WebAPI.Services
             });
         }
 
-        public TopicResponse GetTopic(Guid topicId)
+        Topic ITopicService.GetTopic(Guid topicId)
         {
             var topic = TopicData.Topics.Find(topic => topic.Id == topicId);
 
@@ -26,12 +27,7 @@ namespace LaTiQ.WebAPI.Services
                 throw new NotFoundException($"Không tìm thấy Topic {topicId}");
             }
             
-            return new TopicResponse
-            {
-                Id = topic.Id,
-                Name = topic.Name,
-                ImageUrl = topic.ImageUrl
-            };
+            return topic;
         }
     }
 }

@@ -1,9 +1,8 @@
 ﻿using LaTiQ.WebAPI.ServiceContracts;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using LaTiQ.Application.DTOs;
-using LaTiQ.Core.DTOs.Room.Req;
-using LaTiQ.Core.DTOs.Room.Res;
+using LaTiQ.Application.DTOs.Room.Req;
+using LaTiQ.Application.DTOs.Room.Res;
 
 namespace LaTiQ.WebAPI.Controllers
 {

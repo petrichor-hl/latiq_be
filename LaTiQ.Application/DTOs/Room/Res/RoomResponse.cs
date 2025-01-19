@@ -1,6 +1,6 @@
 using LaTiQ.Core.DTOs.Topic.Res;
 
-namespace LaTiQ.Core.DTOs.Room.Res;
+namespace LaTiQ.Application.DTOs.Room.Res;
 
 public class RoomResponse
 {
@@ -10,7 +10,7 @@ public class RoomResponse
 
     public TopicResponse Topic { get; set; } = null!;
 
-    public int Round { get; set; }
+    public int Points { get; set; }
 
     public int Capacity { get; set; }
 

@@ -1,5 +1,5 @@
-﻿using LaTiQ.Core.DTOs.Room.Req;
-using LaTiQ.Core.DTOs.Room.Res;
+﻿using LaTiQ.Application.DTOs.Room.Req;
+using LaTiQ.Application.DTOs.Room.Res;
 
 namespace LaTiQ.WebAPI.ServiceContracts
 {

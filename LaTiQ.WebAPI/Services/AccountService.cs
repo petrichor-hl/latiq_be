@@ -119,7 +119,6 @@ public class AccountService : IAccountService
 
     public async Task<RefreshTokenSuccessResponse> RefreshToken(RefreshJwtTokenRequest refreshJwtTokenRequest)
     {
-        Console.WriteLine("refreshJwtTokenRequest = " + refreshJwtTokenRequest.AccessToken);
         ClaimsPrincipal? principal;
         try
         {

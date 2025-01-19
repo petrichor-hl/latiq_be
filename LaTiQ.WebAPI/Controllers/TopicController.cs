@@ -22,10 +22,5 @@ namespace LaTiQ.WebAPI.Controllers
             return Ok(ApiResult<IEnumerable<TopicResponse>>.Success(_topicService.GetListTopic()));
         }
 
-        [HttpGet("{topicId:guid}")]
-        public IActionResult GetTopic(Guid topicId)
-        {
-            return Ok(ApiResult<TopicResponse>.Success(_topicService.GetTopic(topicId)));
-        }
     }
 }

@@ -113,6 +113,15 @@ builder.Services.AddAuthentication(options =>
         };
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = context =>
+            {
+                var authorization = context.Request.Headers["Authorization"].ToString();
+                if (!string.IsNullOrEmpty(authorization) && authorization.StartsWith("Bearer "))
+                {
+                    context.Token = authorization["Bearer ".Length..].Trim();
+                }
+                return Task.CompletedTask;
+            },
             /*
              * Invoked after the security token has passed validation and a ClaimsIdentity has been generated.
              * Tức là nó phải pass những điều kiện ở trên "TokenValidationParameters"
@@ -182,7 +191,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapHub<GlobalHub>("global-hub");
+app.MapHub<GlobalHub>("/global-hub");
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

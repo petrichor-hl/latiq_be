@@ -50,7 +50,7 @@ namespace LaTiQ.WebAPI.Constants
 
         private static readonly Topic fruitTopic = new Topic
                 .Builder()
-                .SetId(Guid.NewGuid())
+                .SetId(Guid.Parse("d712e3d0-7594-4e93-93a0-44ce8a2a5755"))
                 .SetName("Fruits")
                 .SetImageUrl("https://www.mooringspark.org/hs-fs/hubfs/bigstock-Fresh-Fruits-assorted-Fruits-C-365480089%20Large.jpeg")
                 .SetWords(fruits)

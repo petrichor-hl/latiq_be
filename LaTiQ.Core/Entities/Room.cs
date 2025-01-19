@@ -6,12 +6,16 @@
 
         public Guid OwnerId { get; set; }
 
-        public Guid TopicId { get; set; }
+        public Topic Topic { get; set; } = null!;
 
-        public int Round { get; set; }
+        public int Points { get; set; }
 
         public int Capacity { get; set; }
+        
+        public int Turn { get; set; }
 
         public bool IsPublic { get; set; }
+        
+        public bool IsLocked { get; set; }
     }
 }

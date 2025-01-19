@@ -1,19 +1,20 @@
-﻿using LaTiQ.Core.Entities;
+﻿using System.Security.Claims;
 using LaTiQ.WebAPI.ServiceContracts;
 using LaTiQ.WebAPI.Singletons;
 using Microsoft.AspNetCore.SignalR;
-using System.Security.Claims;
-using LaTiQ.Application.Enum;
 using LaTiQ.Application.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace LaTiQ.WebAPI.Hubs
 {
+    [Authorize]
     public class GlobalHub : Hub
     {
         private readonly IUserService _userService;
         private readonly ITopicService _topicService;
 
         private readonly RoomData _roomData;
+        private readonly Random random = new Random();
 
         public GlobalHub(IUserService userService, ITopicService topicService, RoomData roomData)
         {
@@ -25,10 +26,6 @@ namespace LaTiQ.WebAPI.Hubs
         public override async Task OnConnectedAsync()
         {
             await base.OnConnectedAsync();
-            var email = Context.User.FindFirstValue(ClaimTypes.Email);
-            Console.WriteLine("Context.ConnectionId = " + Context.ConnectionId);
-            Console.WriteLine("email = " + email);
-            Console.WriteLine("Context.UserIdentifier = " + Context.UserIdentifier);
         }
 
         public async Task JoinRoom(UserRoom userRoom)
@@ -44,14 +41,14 @@ namespace LaTiQ.WebAPI.Hubs
             _roomData.UserRooms[Context.ConnectionId] = userRoom;
         }
 
-        public async Task ChangeCameraStatus(CameraStatus cameraStatus)
-        {
-            if (_roomData.UserRooms.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
-            {
-                userRoom.CameraStatus = cameraStatus;
-                await Clients.OthersInGroup(userRoom.RoomId).SendAsync("ChangeCameraStatus", userRoom.UserEmail, cameraStatus);
-            }
-        }
+        // public async Task ChangeCameraStatus(CameraStatus cameraStatus)
+        // {
+        //     if (_roomData.UserRooms.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
+        //     {
+        //         userRoom.CameraStatus = cameraStatus;
+        //         await Clients.OthersInGroup(userRoom.RoomId).SendAsync("ChangeCameraStatus", userRoom.UserEmail, cameraStatus);
+        //     }
+        // }
 
         public async Task LeaveRoom()
         {
@@ -61,18 +58,64 @@ namespace LaTiQ.WebAPI.Hubs
                 _roomData.UserRooms.Remove(Context.ConnectionId);
                 
                 var userInRooms = _roomData.UserRooms.Values
-                    .Where(e => e.RoomId == userRoom.RoomId);
+                    .Where(e => e.RoomId == userRoom.RoomId).ToList();
                 
                 if (userInRooms.Any())
                 {
                     // Inform to the others in group
-                    await Clients.Group(userRoom.RoomId).SendAsync("LeaveRoom", userRoom.UserEmail);
+                    await Clients.OthersInGroup(userRoom.RoomId).SendAsync("LeaveRoom", userRoom.UserId, userRoom.UserNickName);
+                    
+                    var room = _roomData.RoomInfo[userRoom.RoomId];
+                    if (room.OwnerId == userRoom.UserId)
+                    {
+                        // Room Owner left => Change room owner to userInRooms[0]
+                        room.OwnerId = userInRooms[0].UserId;
+                        await Clients.OthersInGroup(room.RoomId).SendAsync("NewRoomOwner", room.OwnerId);
+                    }
                 }
                 else
                 {
-                    _roomData.RoomInfo.Remove(userRoom.RoomId);
+                    _roomData.RoomInfo[userRoom.RoomId].IsLocked = false;
+                    // _roomData.RoomInfo.Remove(userRoom.RoomId);
                 }
             }
+        }
+        
+        public async Task StartGame()
+        {
+            if (_roomData.UserRooms.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
+            {
+                var userId = Guid.Parse(Context.User?.FindFirstValue("UserId")!);
+                var room = _roomData.RoomInfo[userRoom.RoomId];
+                if (room.OwnerId == userId)
+                {
+                    room.IsLocked = true;
+                    await Clients.Group(room.RoomId).SendAsync("StartGame");
+                    await Task.Delay(3000);
+                    await SelectDrawer(room.RoomId);
+                }
+            }
+        }
+
+        private async Task SelectDrawer(string roomId)
+        {
+            var userInRooms = _roomData.UserRooms.Values
+                .Where(e => e.RoomId == roomId).OrderBy(e => e.UserId).ToList();
+            
+            var room = _roomData.RoomInfo[roomId];
+            
+            var drawer = userInRooms[room.Turn % userInRooms.Count];
+            
+            var randomIndex = random.Next(0, room.Topic.Words.Count);
+            
+            await Clients.Group(roomId).SendAsync(
+                "SelectDrawer", 
+                drawer.UserId, 
+                drawer.UserNickName,
+                room.Topic.Words[randomIndex]
+            );
+            
+            room.Turn++;
         }
 
         #region Drawing
@@ -92,11 +135,19 @@ namespace LaTiQ.WebAPI.Hubs
             }
         }
 
-        public async Task Undo()
+        // public async Task Undo()
+        // {
+        //     if (_roomData.UserRooms.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
+        //     {
+        //         await Clients.OthersInGroup(userRoom.RoomId).SendAsync("Undo");
+        //     }
+        // }
+        
+        public async Task ClearPaint()
         {
             if (_roomData.UserRooms.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
             {
-                await Clients.OthersInGroup(userRoom.RoomId).SendAsync("Undo");
+                await Clients.OthersInGroup(userRoom.RoomId).SendAsync("ClearPaint");
             }
         }
         #endregion
