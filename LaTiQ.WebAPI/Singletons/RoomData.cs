@@ -19,12 +19,14 @@ namespace LaTiQ.WebAPI.Singletons
                     Points = 50,
                     Capacity = 10,
                     Turn = 0,
-                    IsPublic = true
+                    IsPublic = true,
+                    IsLocked = false,
+                    UsersInRoom = new List<UserRoom>()
                 }
             }
         };
 
         // Dictionary<Context.ConnectionId(Hub), UserRoom>
-        public Dictionary<string, UserRoom> UserRooms { get; set; } = new Dictionary<string, UserRoom>();
+        public Dictionary<string, UserRoom> ConnectionData { get; set; } = new Dictionary<string, UserRoom>();
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace LaTiQ.Core.Entities
+﻿using LaTiQ.Application.Models;
+
+namespace LaTiQ.Core.Entities
 {
     public class Room
     {
@@ -19,5 +21,7 @@
         public bool IsPublic { get; set; }
         
         public bool IsLocked { get; set; }
+        
+        public List<UserRoom> UsersInRoom { get; set; } = new List<UserRoom>();
     }
 }
