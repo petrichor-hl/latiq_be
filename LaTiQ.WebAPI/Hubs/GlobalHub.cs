@@ -32,13 +32,12 @@ namespace LaTiQ.WebAPI.Hubs
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, userRoom.RoomId);
             
+            _roomData.UserRooms[Context.ConnectionId] = userRoom;
             var userInRooms = _roomData.UserRooms.Values
                 .Where(e => e.RoomId == userRoom.RoomId);
             
             await Clients.Caller.SendAsync("ReceiveUserInRooms", userInRooms);
             await Clients.OthersInGroup(userRoom.RoomId).SendAsync("JoinRoom", userRoom);
-            
-            _roomData.UserRooms[Context.ConnectionId] = userRoom;
         }
 
         // public async Task ChangeCameraStatus(CameraStatus cameraStatus)
@@ -85,7 +84,7 @@ namespace LaTiQ.WebAPI.Hubs
         {
             if (_roomData.UserRooms.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
             {
-                var userId = Guid.Parse(Context.User?.FindFirstValue("UserId")!);
+                var userId = _roomData.UserRooms[Context.ConnectionId].UserId;
                 var room = _roomData.RoomInfo[userRoom.RoomId];
                 if (room.OwnerId == userId)
                 {
@@ -106,13 +105,13 @@ namespace LaTiQ.WebAPI.Hubs
             
             var drawer = userInRooms[room.Turn % userInRooms.Count];
             
-            var randomIndex = random.Next(0, room.Topic.Words.Count);
+            room.RandomWordIndex = random.Next(0, room.Topic.Words.Count);
             
             await Clients.Group(roomId).SendAsync(
                 "SelectDrawer", 
                 drawer.UserId, 
                 drawer.UserNickName,
-                room.Topic.Words[randomIndex]
+                room.Topic.Words[room.RandomWordIndex]
             );
             
             room.Turn++;
@@ -152,6 +151,33 @@ namespace LaTiQ.WebAPI.Hubs
         }
         #endregion
 
+        #region Answer
+
+        public async Task Answer(string answer, int remainingTime)
+        {
+            var userRoom = _roomData.UserRooms[Context.ConnectionId];
+            var room = _roomData.RoomInfo[userRoom.RoomId];
+
+            if (answer.ToLower() == room.Topic.Words[room.RandomWordIndex].ToLower())
+            {
+                userRoom.UserPoints += remainingTime;
+                if (userRoom.UserPoints >= room.Points)
+                {
+                    // End Game
+                }
+                else
+                {
+                    await Clients.Group(room.RoomId).SendAsync("CorrectAnswer", userRoom.UserId, userRoom.UserNickName, remainingTime);
+                }
+            }
+            else
+            {
+                await Clients.Group(room.RoomId).SendAsync("IncorrectAnswer", userRoom.UserNickName, answer);
+            }
+        }
+
+        #endregion
+        
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             await base.OnDisconnectedAsync(exception);

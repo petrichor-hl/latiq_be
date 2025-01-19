@@ -7,6 +7,8 @@
         public Guid OwnerId { get; set; }
 
         public Topic Topic { get; set; } = null!;
+        
+        public int RandomWordIndex { get; set; }
 
         public int Points { get; set; }
 

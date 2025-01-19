@@ -7,6 +7,8 @@ public class UserRoom
     public string UserNickName { get; set; } = string.Empty;
         
     public string UserAvatar { get; set; } = string.Empty;
+
+    public int UserPoints { get; set; } = 0;
         
     // public CameraStatus CameraStatus { get; set; }
         
