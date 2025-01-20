@@ -130,7 +130,10 @@ builder.Services.AddAuthentication(options =>
             OnTokenValidated = async context =>
             {
                 var userIdClaim = context.Principal.FindFirstValue("UserId");
-                if (userIdClaim == null) context.Fail("Token không chứa thuộc tính UserId.");
+                if (userIdClaim == null)
+                {
+                    context.Fail("Token không chứa thuộc tính UserId.");
+                }
 
                 var userManager =
                     context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
@@ -139,9 +142,15 @@ builder.Services.AddAuthentication(options =>
                 var tokenVersionClaim = context.Principal.FindFirstValue("tokenVersion");
 
                 if (user == null)
+                {
                     context.Fail("Không tìm thấy người dùng");
+                }
+                    
                 else if (!int.TryParse(tokenVersionClaim, out var intTokenVersion) ||
-                         intTokenVersion != user.TokenVersion) context.Fail("Access Token không hợp lệ.");
+                         intTokenVersion != user.TokenVersion)
+                {
+                    context.Fail("Access Token không hợp lệ.");
+                }
             },
             /* Invoked before a challenge is sent back to the caller. */
             OnChallenge = context =>
@@ -173,6 +182,7 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 });
 
 builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

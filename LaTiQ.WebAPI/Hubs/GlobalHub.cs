@@ -1,6 +1,8 @@
 ﻿using LaTiQ.WebAPI.Singletons;
 using Microsoft.AspNetCore.SignalR;
 using LaTiQ.Application.Models;
+using LaTiQ.Core.Entities;
+using LaTiQ.WebAPI.ServiceContracts;
 using Microsoft.AspNetCore.Authorization;
 
 namespace LaTiQ.WebAPI.Hubs
@@ -9,11 +11,13 @@ namespace LaTiQ.WebAPI.Hubs
     public class GlobalHub : Hub
     {
         private readonly RoomData _roomData;
-        private readonly Random _random = new Random();
+        
+        private readonly IRoomService _roomService;
 
-        public GlobalHub(RoomData roomData)
+        public GlobalHub(RoomData roomData, IRoomService roomService)
         {
             _roomData = roomData;
+            _roomService = roomService;
         }
 
         public override async Task OnConnectedAsync()
@@ -58,8 +62,13 @@ namespace LaTiQ.WebAPI.Hubs
                 
                 // 3. Xoá UserRoom khỏi Room.UsersInRoom
                 var room = _roomData.RoomInfo[userRoom.RoomId];
+                
                 room.UsersInRoom.Remove(userRoom);
                 
+                // 4. Điều chỉnh lại Room.Turn 
+                room.Turn -= userRoom.Turn;
+                
+                // 5. Kiểm tra xem còn bất kỳ ai trong Room không
                 if (room.UsersInRoom.Any())
                 {
                     // Inform to the others in group
@@ -74,8 +83,8 @@ namespace LaTiQ.WebAPI.Hubs
                 }
                 else
                 {
-                    _roomData.RoomInfo[userRoom.RoomId].IsLocked = false;
-                    // _roomData.RoomInfo.Remove(userRoom.RoomId);
+                    Console.WriteLine($"Room {userRoom.RoomId} has no users in room");
+                    _roomData.RoomInfo.Remove(userRoom.RoomId);
                 }
             }
         }
@@ -86,34 +95,16 @@ namespace LaTiQ.WebAPI.Hubs
             {
                 var userId = _roomData.ConnectionUserRoom[Context.ConnectionId].UserId;
                 var room = _roomData.RoomInfo[userRoom.RoomId];
+                
                 if (room.OwnerId == userId)
                 {
-                    room.IsLocked = true;
                     await Clients.Group(room.RoomId).SendAsync("StartGame");
-                    await Task.Delay(3000);
-                    await SelectDrawer(room.RoomId);
+                    _ = _roomService.PlayGame(room);
                 }
             }
         }
 
-        private async Task SelectDrawer(string roomId)
-        {
-            var room = _roomData.RoomInfo[roomId];
-            var userInRooms = room.UsersInRoom;
-            
-            var drawer = userInRooms[room.Turn % userInRooms.Count];
-            
-            room.RandomWordIndex = _random.Next(0, room.Topic.Words.Count);
-            
-            await Clients.Group(roomId).SendAsync(
-                "SelectDrawer", 
-                drawer.UserId, 
-                drawer.UserNickName,
-                room.Topic.Words[room.RandomWordIndex]
-            );
-            
-            room.Turn++;
-        }
+        
 
         #region Drawing
         public async Task BeginPath(string strokeColor, float lineWidth, Point point)
@@ -143,34 +134,56 @@ namespace LaTiQ.WebAPI.Hubs
 
         #region Answer
 
-        public async Task Answer(string answer, int remainingTime)
+        public async Task SendAnswer(string answer, int remainingTime)
         {
             var userRoom = _roomData.ConnectionUserRoom[Context.ConnectionId];
             var room = _roomData.RoomInfo[userRoom.RoomId];
 
             if (string.Equals(answer, room.Topic.Words[room.RandomWordIndex], StringComparison.CurrentCultureIgnoreCase))
             {
-                var userInRooms = room.UsersInRoom;
-                var drawer = userInRooms[room.Turn % userInRooms.Count];
-                // Cộng điểm cho Người vẽ
-                drawer.UserPoints += remainingTime;
-                
+                await Clients.Group(room.RoomId).SendAsync(
+                    "AnsweredCorrectly", 
+                    userRoom.UserId, 
+                    userRoom.UserNickName, 
+                    remainingTime
+                );
+
                 // Cộng điểm cho Người trả lời đúng
                 userRoom.UserPoints += remainingTime;
-
-                if (drawer.UserPoints >= room.Points || userRoom.UserPoints >= room.Points)
+                if (userRoom.UserPoints >= room.Points)
                 {
-                    // ENDGAME
-                }
-                else
-                {
-                    await Clients.Group(room.RoomId).SendAsync("CorrectAnswer", userRoom.UserId, userRoom.UserNickName, remainingTime);
+                    // Đánh dấu ENDGAME
+                    room.IsEnd = true;
                 }
                 
+                // Logic tính điểm cho Drawer
+                // Không được xoá "room.Turn > 0"
+                if (room.Turn > 0)  
+                {
+                    var userInRooms = room.UsersInRoom;
+                    var drawer = userInRooms[(room.Turn - 1) % userInRooms.Count];
+                    Console.WriteLine("drawer.UserId  = " + drawer.UserId);
+                    Console.WriteLine("room.DrawerId  = " + room.DrawerId);
+                    
+                    // Cộng điểm cho Drawer
+                    if (room.DrawerId == drawer.UserId) 
+                    {
+                        // Vì sao lại Kiểm tra: room.DrawerId == drawer.UserId ???
+                        // Khi người vẽ thoát thì var drawer = userInRooms[(room.Turn - 1) % userInRooms.Count] sẽ không còn đúng nữa
+                        // Lúc này room.DrawerId != drawer.UserId
+                        drawer.UserPoints += remainingTime;
+
+                        if (drawer.UserPoints >= room.Points)
+                        {
+                            // Đánh dấu ENDGAME
+                            room.IsEnd = true;
+                        }
+                    }
+                }
             }
             else
             {
-                await Clients.Group(room.RoomId).SendAsync("IncorrectAnswer", userRoom.UserNickName, answer);
+                await Clients.Group(room.RoomId).SendAsync("AnsweredWrong", userRoom.UserNickName, answer);
             }
         }
 

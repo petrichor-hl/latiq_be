@@ -5,9 +5,11 @@ using LaTiQ.Application.Exceptions;
 using LaTiQ.Core.DTOs.Topic.Res;
 using LaTiQ.Core.Entities;
 using LaTiQ.Core.Identity;
+using LaTiQ.WebAPI.Hubs;
 using LaTiQ.WebAPI.ServiceContracts;
 using LaTiQ.WebAPI.Singletons;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 
 namespace LaTiQ.WebAPI.Services
 {
@@ -18,19 +20,26 @@ namespace LaTiQ.WebAPI.Services
         private readonly IHttpContextAccessor _httpContextAccessor;
         
         private readonly RoomData _roomData;
+        
+        private readonly IHubContext<GlobalHub> _hubContext;
+        
+        private readonly Random _random = new Random();
 
         public RoomService(
             UserManager<ApplicationUser> userManager, 
-            IUserService userService, 
             ITopicService topicService, 
             IHttpContextAccessor httpContextAccessor, 
-            RoomData roomData
+            RoomData roomData, 
+            IHubContext<GlobalHub> hubContext
             )
         {
             _userManager = userManager;
             _topicService = topicService;
             _httpContextAccessor = httpContextAccessor;
+            
             _roomData = roomData;
+            
+            _hubContext = hubContext;
         }
 
         public async Task<RoomResponse> MakeRoom(MakeRoomRequest makeRoomRequest)
@@ -64,11 +73,13 @@ namespace LaTiQ.WebAPI.Services
                 RoomId = hashCode.ToString(),
                 OwnerId = user.Id,
                 Topic = topic,
+                // RandomWordIndex
                 Points = makeRoomRequest.Points,
                 Capacity = makeRoomRequest.Capacity,
-                Turn = 0,
-                IsPublic = makeRoomRequest.IsPublic,
-                IsLocked = false,
+                // UsersInRoom
+                // Turn
+                // DrawerId
+                // IsEnd
             };
 
             _roomData.RoomInfo[room.RoomId] = room;
@@ -85,7 +96,6 @@ namespace LaTiQ.WebAPI.Services
                 },
                 Points = room.Points,
                 Capacity = room.Capacity,
-                IsPublic = room.IsPublic,
             };
         }
 
@@ -97,11 +107,6 @@ namespace LaTiQ.WebAPI.Services
                 throw new NotFoundException($"Không tìm thấy Room {roomId}");
             }
 
-            if (room.IsLocked)
-            {
-                throw new NotFoundException($"Room {roomId} đã khoá");
-            }
-            
             return new RoomResponse
             {
                 RoomId = room.RoomId,
@@ -114,8 +119,45 @@ namespace LaTiQ.WebAPI.Services
                 },
                 Points = room.Points,
                 Capacity = room.Capacity,
-                IsPublic = room.IsPublic,
             };
         }
+
+        public async Task PlayGame(Room room)
+        {
+            await _hubContext.Clients.Group(room.RoomId).SendAsync("StartGame");
+            await Task.Delay(3000);
+            while (room.IsEnd == false)
+            {
+                await StartNewTurn(room.RoomId);
+                await Task.Delay(25000);
+                //
+                // await Clients.Group(userRoom.RoomId).SendAsync("ClearPaint");
+                // 
+                // var correctAnswer = room.Topic.Words[room.RandomWordIndex];
+                // await Clients.Group(room.RoomId).SendAsync("ShowAnswer", correctAnswer);
+            }
+            await _hubContext.Clients.Group(room.RoomId).SendAsync("EndGame");
+        }
+        
+        private async Task StartNewTurn(string roomId)
+        {        
+            var room = _roomData.RoomInfo[roomId];
+            var userInRooms = room.UsersInRoom;
+            room.Turn += 1;
+            
+            var drawer = userInRooms[(room.Turn - 1) % userInRooms.Count];
+            drawer.Turn += 1;
+            
+            room.DrawerId = drawer.UserId;
+            room.RandomWordIndex = _random.Next(0, room.Topic.Words.Count);
+            
+            await _hubContext.Clients.Group(roomId).SendAsync(
+                "StartNewTurn", 
+                drawer.UserId, 
+                drawer.UserNickName,
+                room.Topic.Words[room.RandomWordIndex]
+            );
+        }
+        
     }
 }

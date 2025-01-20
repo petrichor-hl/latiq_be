@@ -15,13 +15,14 @@ namespace LaTiQ.WebAPI.Singletons
                 {
                     RoomId = "0",
                     OwnerId = Guid.Parse("25302ef5-f2fc-4c83-bfd7-ec0b7ef7dc9a"),
-                    Topic = TopicData.Topics[2],
+                    Topic = TopicData.Topics[4],
+                    // RandomWordIndex
                     Points = 50,
                     Capacity = 10,
-                    Turn = 0,
-                    IsPublic = true,
-                    IsLocked = false,
-                    UsersInRoom = new List<UserRoom>()
+                    // UsersInRoom
+                    // Turn
+                    // DrawerId
+                    // IsEnd
                 }
             }
         };

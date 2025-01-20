@@ -16,12 +16,12 @@ namespace LaTiQ.Core.Entities
 
         public int Capacity { get; set; }
         
-        public int Turn { get; set; }
-
-        public bool IsPublic { get; set; }
-        
-        public bool IsLocked { get; set; }
-        
         public List<UserRoom> UsersInRoom { get; set; } = new List<UserRoom>();
+
+        public int Turn { get; set; } = 0;
+        
+        public Guid DrawerId { get; set; }
+
+        public bool IsEnd { get; set; } = false;
     }
 }

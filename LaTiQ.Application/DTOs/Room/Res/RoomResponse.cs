@@ -13,6 +13,4 @@ public class RoomResponse
     public int Points { get; set; }
 
     public int Capacity { get; set; }
-
-    public bool IsPublic { get; set; }
 }

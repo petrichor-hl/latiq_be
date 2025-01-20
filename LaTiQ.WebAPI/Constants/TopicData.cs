@@ -6,7 +6,7 @@ namespace LaTiQ.WebAPI.Constants
     {
         private static readonly List<string> fruits = new() { "Orange", "Banana", "Mango", "Kiwi", "Apple", "Grapes", "Pineapple", "Strawberry", "Watermelon", "Peach" };
         private static readonly List<string> nationalFlag = new() { "VietNam", "Germany", "Mexico", "Japan", "Canada", "Australia", "Brazil" };
-        private static readonly List<string> animals = new() { "Dog", "Cat", "Mouse", "Chicken", "Cow", "Pig", "Goat", "Duck", "Rabbit", "Horse", "Parrot" };
+        private static readonly List<string> animals = new() { "Dog", "Cat", "Mouse", "Chicken", "Cow", "Pig", "Goat", "Duck", "Rabbit", "Horse", "Parrot", "Sheep", "Tiger", "Lion", "Fox", "Monkey", "Elephant" };
 
         private static readonly List<string> programmingLanguages = new()
             {
@@ -66,7 +66,7 @@ namespace LaTiQ.WebAPI.Constants
 
         private static readonly Topic animalTopic = new Topic
                 .Builder()
-                .SetId(Guid.NewGuid())
+                .SetId(Guid.Parse("bcb9d8f5-6d25-4792-a815-eff00c92071d"))
                 .SetName("Animals")
                 .SetImageUrl("https://media.newyorker.com/photos/62c4511e47222e61f46c2daa/4:3/w_2663,h_1997,c_limit/shouts-animals-watch-baby-hemingway.jpg")
                 .SetWords(animals)
