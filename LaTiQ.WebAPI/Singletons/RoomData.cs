@@ -27,6 +27,6 @@ namespace LaTiQ.WebAPI.Singletons
         };
 
         // Dictionary<Context.ConnectionId(Hub), UserRoom>
-        public Dictionary<string, UserRoom> ConnectionData { get; set; } = new Dictionary<string, UserRoom>();
+        public Dictionary<string, UserRoom> ConnectionUserRoom { get; set; } = new Dictionary<string, UserRoom>();
     }
 }

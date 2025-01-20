@@ -1,5 +1,4 @@
-﻿using LaTiQ.WebAPI.ServiceContracts;
-using LaTiQ.WebAPI.Singletons;
+﻿using LaTiQ.WebAPI.Singletons;
 using Microsoft.AspNetCore.SignalR;
 using LaTiQ.Application.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -24,9 +23,13 @@ namespace LaTiQ.WebAPI.Hubs
 
         public async Task JoinRoom(UserRoom userRoom)
         {
+            // 1. Thêm ConnectionId vào Group RoomId
             await Groups.AddToGroupAsync(Context.ConnectionId, userRoom.RoomId);
             
-            _roomData.ConnectionData[Context.ConnectionId] = userRoom;
+            // 2. Lưu KV pair: <ConnectionId, UserRoom>
+            _roomData.ConnectionUserRoom[Context.ConnectionId] = userRoom;
+            
+            // 3. Thêm UserRoom vào Room.UsersInRoom
             var room = _roomData.RoomInfo[userRoom.RoomId];
             room.UsersInRoom.Add(userRoom);
             
@@ -45,11 +48,15 @@ namespace LaTiQ.WebAPI.Hubs
 
         public async Task LeaveRoom()
         {
-            if (_roomData.ConnectionData.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
+            if (_roomData.ConnectionUserRoom.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
             {
+                // 1. Xoá ConnectionId khỏi Group RoomId
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, userRoom.RoomId);
-                _roomData.ConnectionData.Remove(Context.ConnectionId);
                 
+                // 2. Xoá KV pair: <ConnectionId, UserRoom>
+                _roomData.ConnectionUserRoom.Remove(Context.ConnectionId);
+                
+                // 3. Xoá UserRoom khỏi Room.UsersInRoom
                 var room = _roomData.RoomInfo[userRoom.RoomId];
                 room.UsersInRoom.Remove(userRoom);
                 
@@ -75,9 +82,9 @@ namespace LaTiQ.WebAPI.Hubs
         
         public async Task StartGame()
         {
-            if (_roomData.ConnectionData.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
+            if (_roomData.ConnectionUserRoom.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
             {
-                var userId = _roomData.ConnectionData[Context.ConnectionId].UserId;
+                var userId = _roomData.ConnectionUserRoom[Context.ConnectionId].UserId;
                 var room = _roomData.RoomInfo[userRoom.RoomId];
                 if (room.OwnerId == userId)
                 {
@@ -111,7 +118,7 @@ namespace LaTiQ.WebAPI.Hubs
         #region Drawing
         public async Task BeginPath(string strokeColor, float lineWidth, Point point)
         {
-            if (_roomData.ConnectionData.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
+            if (_roomData.ConnectionUserRoom.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
             {
                 await Clients.OthersInGroup(userRoom.RoomId).SendAsync("BeginPath", strokeColor, lineWidth, point);
             }
@@ -119,7 +126,7 @@ namespace LaTiQ.WebAPI.Hubs
 
         public async Task LineTo(Point point)
         {
-            if (_roomData.ConnectionData.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
+            if (_roomData.ConnectionUserRoom.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
             {
                 await Clients.OthersInGroup(userRoom.RoomId).SendAsync("LineTo", point);
             }
@@ -127,7 +134,7 @@ namespace LaTiQ.WebAPI.Hubs
         
         public async Task ClearPaint()
         {
-            if (_roomData.ConnectionData.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
+            if (_roomData.ConnectionUserRoom.TryGetValue(Context.ConnectionId, out UserRoom? userRoom))
             {
                 await Clients.OthersInGroup(userRoom.RoomId).SendAsync("ClearPaint");
             }
@@ -138,7 +145,7 @@ namespace LaTiQ.WebAPI.Hubs
 
         public async Task Answer(string answer, int remainingTime)
         {
-            var userRoom = _roomData.ConnectionData[Context.ConnectionId];
+            var userRoom = _roomData.ConnectionUserRoom[Context.ConnectionId];
             var room = _roomData.RoomInfo[userRoom.RoomId];
 
             if (string.Equals(answer, room.Topic.Words[room.RandomWordIndex], StringComparison.CurrentCultureIgnoreCase))
@@ -171,6 +178,8 @@ namespace LaTiQ.WebAPI.Hubs
         
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
+            // The ConnectionId still exists here
+            // Console.WriteLine("OnDisconnectedAsync " + Context.ConnectionId);
             await base.OnDisconnectedAsync(exception);
             await LeaveRoom();
         }
