@@ -130,11 +130,10 @@ namespace LaTiQ.WebAPI.Services
             {
                 await StartNewTurn(room.RoomId);
                 await Task.Delay(25000);
-                //
-                // await Clients.Group(userRoom.RoomId).SendAsync("ClearPaint");
-                // 
-                // var correctAnswer = room.Topic.Words[room.RandomWordIndex];
-                // await Clients.Group(room.RoomId).SendAsync("ShowAnswer", correctAnswer);
+                 
+                var correctAnswer = room.Topic.Words[room.RandomWordIndex];
+                await _hubContext.Clients.Group(room.RoomId).SendAsync("ShowAnswer", correctAnswer);
+                await Task.Delay(5000);
             }
             await _hubContext.Clients.Group(room.RoomId).SendAsync("EndGame");
         }

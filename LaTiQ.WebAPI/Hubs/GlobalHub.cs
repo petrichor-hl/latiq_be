@@ -84,6 +84,10 @@ namespace LaTiQ.WebAPI.Hubs
                 else
                 {
                     Console.WriteLine($"Room {userRoom.RoomId} has no users in room");
+                    // Optional:
+                    // Nếu trò chơi chưa kết thúc, nhưng trong room không còn ai
+                    // => Đánh dấu IsEnd = True để kết thúc vòng While
+                    _roomData.RoomInfo[userRoom.RoomId].IsEnd = true;
                     _roomData.RoomInfo.Remove(userRoom.RoomId);
                 }
             }
@@ -103,8 +107,6 @@ namespace LaTiQ.WebAPI.Hubs
                 }
             }
         }
-
-        
 
         #region Drawing
         public async Task BeginPath(string strokeColor, float lineWidth, Point point)
@@ -162,8 +164,6 @@ namespace LaTiQ.WebAPI.Hubs
                 {
                     var userInRooms = room.UsersInRoom;
                     var drawer = userInRooms[(room.Turn - 1) % userInRooms.Count];
-                    Console.WriteLine("drawer.UserId  = " + drawer.UserId);
-                    Console.WriteLine("room.DrawerId  = " + room.DrawerId);
                     
                     // Cộng điểm cho Drawer
                     if (room.DrawerId == drawer.UserId) 
@@ -188,6 +188,14 @@ namespace LaTiQ.WebAPI.Hubs
         }
 
         #endregion
+        
+        public async Task SendMessage(string message)
+        {
+            var userRoom = _roomData.ConnectionUserRoom[Context.ConnectionId];
+            var room = _roomData.RoomInfo[userRoom.RoomId];
+
+            await Clients.Group(room.RoomId).SendAsync("AnsweredWrong", userRoom.UserNickName, message);
+        }
         
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
