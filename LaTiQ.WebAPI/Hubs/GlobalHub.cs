@@ -1,7 +1,7 @@
-﻿using LaTiQ.WebAPI.Singletons;
+﻿using System.Security.Claims;
+using LaTiQ.WebAPI.Singletons;
 using Microsoft.AspNetCore.SignalR;
 using LaTiQ.Application.Models;
-using LaTiQ.Core.Entities;
 using LaTiQ.WebAPI.ServiceContracts;
 using Microsoft.AspNetCore.Authorization;
 
@@ -11,18 +11,45 @@ namespace LaTiQ.WebAPI.Hubs
     public class GlobalHub : Hub
     {
         private readonly RoomData _roomData;
+        private readonly UserConnection _userConnection;
         
         private readonly IRoomService _roomService;
-
-        public GlobalHub(RoomData roomData, IRoomService roomService)
+        private readonly IUserService _userService;
+        
+        public GlobalHub(RoomData roomData, IRoomService roomService, IUserService userService, UserConnection userConnection)
         {
             _roomData = roomData;
             _roomService = roomService;
+            _userService = userService;
+            _userConnection = userConnection;
         }
 
         public override async Task OnConnectedAsync()
         {
             await base.OnConnectedAsync();
+            
+            // Thêm KV value: <userId, Context.ConnectionId>
+            var userId = Guid.Parse(Context.User.FindFirstValue("UserId"));
+            _userConnection.Mapping.Add(userId, Context.ConnectionId);
+            
+            // Cập nhật trạng thái User là Online
+            await _userService.UpdateStatus(true);
+        }
+        
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            // The ConnectionId still exists here
+            // Console.WriteLine("OnDisconnectedAsync " + Context.ConnectionId);
+            await base.OnDisconnectedAsync(exception);
+            
+            // Xoá KV value: <userId, Context.ConnectionId>
+            var userId = Guid.Parse(Context.User.FindFirstValue("UserId"));
+            _userConnection.Mapping.Remove(userId);
+
+            // Cập nhật trạng thái User là Offline
+            await _userService.UpdateStatus(false);
+            
+            await LeaveRoom();
         }
 
         public async Task JoinRoom(UserRoom userRoom)
@@ -62,7 +89,6 @@ namespace LaTiQ.WebAPI.Hubs
                 
                 // 3. Xoá UserRoom khỏi Room.UsersInRoom
                 var room = _roomData.RoomInfo[userRoom.RoomId];
-                
                 room.UsersInRoom.Remove(userRoom);
                 
                 // 4. Điều chỉnh lại Room.Turn 
@@ -77,8 +103,17 @@ namespace LaTiQ.WebAPI.Hubs
                     if (room.OwnerId == userRoom.UserId)
                     {
                         // Room Owner left => Change room owner to userInRooms[0]
-                        room.OwnerId = room.UsersInRoom[0].UserId;
-                        await Clients.OthersInGroup(room.RoomId).SendAsync("NewRoomOwner", room.OwnerId);
+                        try
+                        {
+                            room.OwnerId = room.UsersInRoom[0].UserId;
+                            
+                            await Clients.Clients(_userConnection.Mapping[room.OwnerId]).SendAsync("NewRoomOwner", room.OwnerId);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                            throw;
+                        }
                     }
                 }
                 else
@@ -188,7 +223,7 @@ namespace LaTiQ.WebAPI.Hubs
         }
 
         #endregion
-        
+
         public async Task SendMessage(string message)
         {
             var userRoom = _roomData.ConnectionUserRoom[Context.ConnectionId];
@@ -197,12 +232,6 @@ namespace LaTiQ.WebAPI.Hubs
             await Clients.Group(room.RoomId).SendAsync("AnsweredWrong", userRoom.UserNickName, message);
         }
         
-        public override async Task OnDisconnectedAsync(Exception? exception)
-        {
-            // The ConnectionId still exists here
-            // Console.WriteLine("OnDisconnectedAsync " + Context.ConnectionId);
-            await base.OnDisconnectedAsync(exception);
-            await LeaveRoom();
-        }
+
     }
 }

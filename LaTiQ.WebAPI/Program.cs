@@ -46,7 +46,8 @@ builder.Services.AddTransient<IJwtService, JwtService>()
     .AddScoped<ITopicService, TopicService>()
     .AddScoped<IUserService, UserService>()
     .AddScoped<IRoomService, RoomService>()
-    .AddSingleton<RoomData>();
+    .AddSingleton<RoomData>()
+    .AddSingleton<UserConnection>();
 
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

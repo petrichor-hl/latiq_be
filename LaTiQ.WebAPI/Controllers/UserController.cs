@@ -1,9 +1,8 @@
 ﻿using LaTiQ.WebAPI.ServiceContracts;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using LaTiQ.Application.DTOs;
 using LaTiQ.Application.DTOs.User.Req;
-using LaTiQ.Core.DTOs.User.Res;
+using LaTiQ.Application.DTOs.User.Res;
 
 namespace LaTiQ.WebAPI.Controllers
 {
@@ -28,6 +27,30 @@ namespace LaTiQ.WebAPI.Controllers
         public async Task<IActionResult> UpdateProfile(UpdateUserProfileRequest updateUserProfileRequest)
         {
             return Ok(ApiResult<UserProfileResponse>.Success(await _userService.UpdateProfile(updateUserProfileRequest)));
+        }
+        
+        [HttpGet("friends")]
+        public async Task<IActionResult> GetFriendList()
+        {
+            return Ok(ApiResult<List<FriendResponse>>.Success(await _userService.GetFriendList()));
+        }
+        
+        [HttpPost("send-friend-request/{receiverUserId:guid}")]
+        public async Task<IActionResult> SendFriendRequest(Guid receiverUserId)
+        {
+            return Ok(ApiResult<bool>.Success(await _userService.SendFriendRequest(receiverUserId)));
+        }
+        
+        [HttpPost("accept-friend-request/{senderUserId:guid}")]
+        public async Task<IActionResult> AcceptFriendRequest(Guid senderUserId)
+        {
+            return Ok(ApiResult<bool>.Success(await _userService.AcceptFriendRequest(senderUserId)));
+        }
+        
+        [HttpPost("remove-friend-request/{friendId:guid}")]
+        public async Task<IActionResult> RemoveFriendRequest(Guid friendId)
+        {
+            return Ok(ApiResult<bool>.Success(await _userService.RemoveFriendRequest(friendId)));
         }
     }
 }

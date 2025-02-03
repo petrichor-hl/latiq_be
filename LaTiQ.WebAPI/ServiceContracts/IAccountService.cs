@@ -1,5 +1,6 @@
+using LaTiQ.Application.DTOs.Account.Req;
+using LaTiQ.Application.DTOs.Account.Res;
 using LaTiQ.Core.DTOs.Account.Req;
-using LaTiQ.Core.DTOs.Account.Res;
 
 namespace LaTiQ.WebAPI.ServiceContracts;
 

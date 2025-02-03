@@ -1,8 +1,9 @@
 using System.Security.Claims;
 using System.Web;
+using LaTiQ.Application.DTOs.Account.Req;
+using LaTiQ.Application.DTOs.Account.Res;
 using LaTiQ.Application.Exceptions;
 using LaTiQ.Core.DTOs.Account.Req;
-using LaTiQ.Core.DTOs.Account.Res;
 using LaTiQ.Core.Identity;
 using LaTiQ.Core.ServiceContracts;
 using LaTiQ.WebAPI.ServiceContracts;
@@ -146,6 +147,7 @@ public class AccountService : IAccountService
 
         return new RefreshTokenSuccessResponse()
         {
+            Email = user.Email,
             AccessToken = accessToken,
             RefreshToken = refreshToken,
         };

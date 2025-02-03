@@ -1,10 +1,11 @@
 namespace LaTiQ.Application.DTOs.User.Res;
 
-public class UserProfileResponse
+public class FriendResponse
 {
-    public Guid Id { get; set; }
+    public Guid FriendId { get; set; }
+    public Guid UserId { get; set; }
     public string Email { get; set; } = string.Empty;
     public string NickName { get; set; } = string.Empty;
     public string Avatar { get; set; } = string.Empty;
-    public int Experience { get; set; }
+    public bool IsOnline { get; set; }
 }

@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LaTiQ.Application.DTOs;
+using LaTiQ.Application.DTOs.Account.Req;
+using LaTiQ.Application.DTOs.Account.Res;
 using LaTiQ.Core.DTOs.Account.Req;
-using LaTiQ.Core.DTOs.Account.Res;
 using LaTiQ.WebAPI.ServiceContracts;
 
 namespace LaTiQ.WebAPI.Controllers

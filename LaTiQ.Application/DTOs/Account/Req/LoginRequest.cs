@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace LaTiQ.Core.DTOs.Account.Req;
+namespace LaTiQ.Application.DTOs.Account.Req;
 
 public class LoginRequest
 {

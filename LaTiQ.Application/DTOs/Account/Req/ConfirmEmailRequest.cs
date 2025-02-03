@@ -1,4 +1,4 @@
-namespace LaTiQ.Core.DTOs.Account.Req;
+namespace LaTiQ.Application.DTOs.Account.Req;
 
 public class ConfirmEmailRequest
 {
