@@ -148,8 +148,9 @@ namespace LaTiQ.WebAPI.Services
             drawer.Turn += 1;
             
             room.DrawerId = drawer.UserId;
-            room.RandomWordIndex = _random.Next(0, room.Topic.Words.Count);
-            
+            // room.RandomWordIndex = _random.Next(0, room.Topic.Words.Count);
+            room.RandomWordIndex = (room.RandomWordIndex + 1) % room.Topic.Words.Count;
+                
             await _hubContext.Clients.Group(roomId).SendAsync(
                 "StartNewTurn", 
                 drawer.UserId, 

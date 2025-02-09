@@ -106,8 +106,7 @@ namespace LaTiQ.WebAPI.Hubs
                         try
                         {
                             room.OwnerId = room.UsersInRoom[0].UserId;
-                            
-                            await Clients.Clients(_userConnection.Mapping[room.OwnerId]).SendAsync("NewRoomOwner", room.OwnerId);
+                            await Clients.OthersInGroup(userRoom.RoomId).SendAsync("NewRoomOwner", room.OwnerId);
                         }
                         catch (Exception e)
                         {
