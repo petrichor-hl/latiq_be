@@ -18,5 +18,6 @@ public class Friend
     public FriendStatus Status { get; set; }
     
     // Navigation Props
+    public ApplicationUser User { get; set; } = null!;
     public ApplicationUser FriendUser { get; set; } = null!;
 }

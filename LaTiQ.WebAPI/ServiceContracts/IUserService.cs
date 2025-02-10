@@ -7,7 +7,7 @@ namespace LaTiQ.WebAPI.ServiceContracts
     {
         public Task<UserProfileResponse> GetProfile();
         public Task<UserProfileResponse> UpdateProfile(UpdateUserProfileRequest req);
-        public Task<List<FriendResponse>> GetFriendList();
+        public Task<UserFriendResponse> GetFriendList();
         public Task<bool> SendFriendRequest(Guid receiverUserId);
         public Task<bool> AcceptFriendRequest(Guid senderUserId);
         public Task<bool> RemoveFriendRequest(Guid friendId);

@@ -32,7 +32,7 @@ namespace LaTiQ.WebAPI.Controllers
         [HttpGet("friends")]
         public async Task<IActionResult> GetFriendList()
         {
-            return Ok(ApiResult<List<FriendResponse>>.Success(await _userService.GetFriendList()));
+            return Ok(ApiResult<UserFriendResponse>.Success(await _userService.GetFriendList()));
         }
         
         [HttpPost("send-friend-request/{receiverUserId:guid}")]

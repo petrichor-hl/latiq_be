@@ -66,13 +66,13 @@ namespace LaTiQ.WebAPI.Services
             };
         }
 
-        public async Task<List<FriendResponse>> GetFriendList()
+        public async Task<UserFriendResponse> GetFriendList()
         {
             var principal = _httpContextAccessor.HttpContext?.User;
             var userId = Guid.Parse(principal.FindFirstValue("UserId"));
             
-            return await _dbContext.Friends
-                .Where(f => f.UserId == userId && f.Status == FriendStatus.Accepted)
+            var sendRequests = await _dbContext.Friends
+                .Where(f => f.UserId == userId && f.Status == FriendStatus.Pending)
                 .Include(f => f.FriendUser)
                 .Select(f => new FriendResponse
                 {
@@ -81,9 +81,47 @@ namespace LaTiQ.WebAPI.Services
                     Email = f.FriendUser.Email,
                     NickName = f.FriendUser.NickName,
                     Avatar = f.FriendUser.Avatar,
-                    IsOnline = f.FriendUser.IsOnline,
+                    IsOnline = false,   
                 })
                 .ToListAsync();
+            
+            var receiveRequests = await _dbContext.Friends
+                .Where(f => f.FriendId == userId && f.Status == FriendStatus.Pending)
+                .Include(f => f.User)
+                .Select(f => new FriendResponse
+                {
+                    FriendId = f.Id,
+                    UserId = f.UserId,
+                    Email = f.User.Email,
+                    NickName = f.User.NickName,
+                    Avatar = f.User.Avatar,
+                    IsOnline = false,
+                })
+                .ToListAsync();
+
+            var friends =
+                await _dbContext.Friends
+                    .Where(f => f.UserId == userId && f.Status == FriendStatus.Accepted)
+                    .Include(f => f.FriendUser)
+                    .Select(f => new FriendResponse
+                    {
+                        FriendId = f.Id,
+                        UserId = f.FriendId,
+                        Email = f.FriendUser.Email,
+                        NickName = f.FriendUser.NickName,
+                        Avatar = f.FriendUser.Avatar,
+                        IsOnline = f.FriendUser.IsOnline,
+                    })
+                    .ToListAsync();
+            
+            
+            
+            return new UserFriendResponse
+            {
+                SendRequests = sendRequests,
+                ReceiveRequests = receiveRequests,
+                Friends = friends,
+            };
         }
 
         public async Task<bool> SendFriendRequest(Guid receiverUserId)
