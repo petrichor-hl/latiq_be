@@ -10,6 +10,8 @@ namespace LaTiQ.WebAPI.ServiceContracts
 
         public RoomResponse GetRoom(string roomId);
         
+        public List<RoomResponse> GetPublicRooms();
+        
         public Task PlayGame(Room room);
     }
 }

@@ -27,5 +27,11 @@ namespace LaTiQ.WebAPI.Controllers
         {
             return Ok(ApiResult<RoomResponse>.Success(_roomService.GetRoom(roomId)));
         }
+        
+        [HttpGet("get-public-rooms")]
+        public IActionResult GetPublicRooms()
+        {
+            return Ok(ApiResult<List<RoomResponse>>.Success(_roomService.GetPublicRooms()));
+        }
     }
 }

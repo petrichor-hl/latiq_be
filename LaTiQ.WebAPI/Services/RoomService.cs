@@ -76,6 +76,7 @@ namespace LaTiQ.WebAPI.Services
                 // RandomWordIndex
                 Points = makeRoomRequest.Points,
                 Capacity = makeRoomRequest.Capacity,
+                IsPublic = makeRoomRequest.IsPublic,
                 // UsersInRoom
                 // Turn
                 // DrawerId
@@ -84,7 +85,7 @@ namespace LaTiQ.WebAPI.Services
 
             _roomData.RoomInfo[room.RoomId] = room;
 
-            return new RoomResponse
+            var newRoomResponse = new RoomResponse
             {
                 RoomId = room.RoomId,
                 OwnerId = user.Id,
@@ -97,6 +98,13 @@ namespace LaTiQ.WebAPI.Services
                 Points = room.Points,
                 Capacity = room.Capacity,
             };
+
+            if (room.IsPublic)
+            {
+                _ = _hubContext.Clients.All.SendAsync("NewPublicRoomCreated", newRoomResponse);
+            }
+
+            return newRoomResponse;
         }
 
         public RoomResponse GetRoom(string roomId)
@@ -105,6 +113,11 @@ namespace LaTiQ.WebAPI.Services
             if (room == null)
             {
                 throw new NotFoundException($"Không tìm thấy Room {roomId}");
+            }
+
+            if (room.RoomStatus == RoomStatus.Playing || room.RoomStatus == RoomStatus.Finished)
+            {
+                throw new NotFoundException($"Room đã bắt đầu trò chơi rồi.");
             }
 
             return new RoomResponse
@@ -122,11 +135,29 @@ namespace LaTiQ.WebAPI.Services
             };
         }
 
+        public List<RoomResponse> GetPublicRooms()
+        {
+            return _roomData.RoomInfo.Values.Where(room => room.IsPublic && room.RoomStatus == RoomStatus.Waiting).Select(room => new RoomResponse
+            {
+                RoomId = room.RoomId,
+                OwnerId = room.OwnerId,
+                Topic = new TopicResponse
+                {
+                    Id = room.Topic.Id,
+                    Name = room.Topic.Name,
+                    ImageUrl = room.Topic.ImageUrl,
+                },
+                Points = room.Points,
+                Capacity = room.Capacity,
+            }).ToList();
+        }
+
         public async Task PlayGame(Room room)
         {
+            
             await _hubContext.Clients.Group(room.RoomId).SendAsync("StartGame");
             await Task.Delay(3000);
-            while (room.IsEnd == false)
+            while (room.RoomStatus == RoomStatus.Playing)
             {
                 await StartNewTurn(room.RoomId);
                 await Task.Delay(25000);

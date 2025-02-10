@@ -2,6 +2,7 @@
 using LaTiQ.WebAPI.Singletons;
 using Microsoft.AspNetCore.SignalR;
 using LaTiQ.Application.Models;
+using LaTiQ.Core.Entities;
 using LaTiQ.WebAPI.ServiceContracts;
 using Microsoft.AspNetCore.Authorization;
 
@@ -118,10 +119,11 @@ namespace LaTiQ.WebAPI.Hubs
                 else
                 {
                     Console.WriteLine($"Room {userRoom.RoomId} has no users in room");
+                    _ = Clients.All.SendAsync("DeletePublicRoom", room.RoomId);
                     // Optional:
                     // Nếu trò chơi chưa kết thúc, nhưng trong room không còn ai
                     // => Đánh dấu IsEnd = True để kết thúc vòng While
-                    _roomData.RoomInfo[userRoom.RoomId].IsEnd = true;
+                    _roomData.RoomInfo[userRoom.RoomId].RoomStatus = RoomStatus.Finished;
                     _roomData.RoomInfo.Remove(userRoom.RoomId);
                 }
             }
@@ -136,7 +138,9 @@ namespace LaTiQ.WebAPI.Hubs
                 
                 if (room.OwnerId == userId)
                 {
-                    await Clients.Group(room.RoomId).SendAsync("StartGame");
+                    room.RoomStatus = RoomStatus.Playing;
+                     _ = Clients.Group(room.RoomId).SendAsync("StartGame");
+                     _ = Clients.All.SendAsync("DeletePublicRoom", room.RoomId);
                     _ = _roomService.PlayGame(room);
                 }
             }
@@ -189,7 +193,7 @@ namespace LaTiQ.WebAPI.Hubs
                 if (userRoom.UserPoints >= room.Points)
                 {
                     // Đánh dấu ENDGAME
-                    room.IsEnd = true;
+                    room.RoomStatus = RoomStatus.Finished;
                 }
                 
                 // Logic tính điểm cho Drawer
@@ -210,7 +214,7 @@ namespace LaTiQ.WebAPI.Hubs
                         if (drawer.UserPoints >= room.Points)
                         {
                             // Đánh dấu ENDGAME
-                            room.IsEnd = true;
+                            room.RoomStatus = RoomStatus.Finished;
                         }
                     }
                 }

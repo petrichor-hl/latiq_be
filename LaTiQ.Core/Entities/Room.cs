@@ -1,27 +1,35 @@
 ﻿using LaTiQ.Application.Models;
 
-namespace LaTiQ.Core.Entities
+namespace LaTiQ.Core.Entities;
+
+public enum RoomStatus
 {
-    public class Room
-    {
-        public string RoomId { get; set; } = string.Empty;
+    Waiting,
+    Playing,
+    Finished,
+}
 
-        public Guid OwnerId { get; set; }
+public class Room
+{
+    public string RoomId { get; set; } = string.Empty;
 
-        public Topic Topic { get; set; } = null!;
+    public Guid OwnerId { get; set; }
+
+    public Topic Topic { get; set; } = null!;
         
-        public int RandomWordIndex { get; set; }
+    public int RandomWordIndex { get; set; }
 
-        public int Points { get; set; }
+    public int Points { get; set; }
 
-        public int Capacity { get; set; }
+    public int Capacity { get; set; }
         
-        public List<UserRoom> UsersInRoom { get; set; } = new List<UserRoom>();
-
-        public int Turn { get; set; } = 0;
+    public bool IsPublic { get; set; }
         
-        public Guid DrawerId { get; set; }
+    public List<UserRoom> UsersInRoom { get; set; } = new List<UserRoom>();
 
-        public bool IsEnd { get; set; } = false;
-    }
+    public int Turn { get; set; } = 0;
+        
+    public Guid DrawerId { get; set; }
+
+    public RoomStatus RoomStatus { get; set; } = RoomStatus.Waiting;
 }
